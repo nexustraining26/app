@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nexus">
+<title>Nexus</title>
+<style>
+:root{--bg:#0b0b0c;--card:#151517;--card2:#1d1d20;--line:#2a2a2e;--txt:#f2f0ec;--mut:#9a968f;--acc:#c08a4a;--acc2:#e0b07a;--ok:#5fb37a;--err:#d9624f}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--txt);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100%}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+.wrap{max-width:820px;margin:0 auto;padding:16px}
+header.top{position:sticky;top:0;z-index:5;background:rgba(11,11,12,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
+.logo{font-weight:800;letter-spacing:.32em;font-size:17px}
+.logo b{color:var(--acc)}
+.sp{flex:1}
+.btn{background:var(--acc);color:#111;font-weight:700;padding:10px 14px;border-radius:10px}
+.btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line);font-weight:600}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:8px}
+.btn.dan{background:transparent;color:var(--err);border:1px solid #4a2620}
+.btn:disabled{opacity:.5}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.mut{color:var(--mut)}
+.small{font-size:13px}
+h2{font-size:20px;margin:6px 0 12px}
+h3{font-size:16px;margin-bottom:6px}
+input,textarea,select{width:100%;background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+textarea{min-height:110px;resize:vertical;white-space:pre-wrap}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pre{white-space:pre-wrap;word-break:break-word}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:6;background:#101012;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs button{flex:1;padding:10px 4px 12px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button.on{color:var(--acc2)}
+nav.tabs svg{width:22px;height:22px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 2px;text-align:center}
+.day .d{font-size:11px;color:var(--mut);text-transform:uppercase}
+.day .n{font-size:18px;font-weight:700}
+.day.on{border-color:var(--acc);background:#22190f}
+.day.has .n::after{content:"";display:block;width:5px;height:5px;border-radius:50%;background:var(--acc);margin:3px auto 0}
+.bloco{border-left:3px solid var(--acc);padding:4px 0 4px 12px;margin:14px 0}
+.bloco h4{font-size:15px;margin-bottom:4px;color:var(--acc2)}
+.res{margin-top:8px;background:var(--card2);border-radius:10px;padding:10px}
+.ok{color:var(--ok)}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:12px}
+.list .it{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list .it:last-child{border-bottom:0}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+@media(max-width:700px){.cal{grid-template-columns:1fr}}
+.cal .c{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px;min-height:90px}
+.cal .c .h{font-size:12px;color:var(--mut);margin-bottom:6px;display:flex;justify-content:space-between}
+.cal .t{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:13px;margin-bottom:6px;width:100%;text-align:left}
+.cal .t.ind{border-color:#5a4325}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:20}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:15;display:flex;align-items:flex-end;justify-content:center}
+.modal .box{background:var(--bg);border:1px solid var(--line);border-radius:16px 16px 0 0;width:100%;max-width:820px;max-height:92vh;overflow:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+@media(min-width:700px){.modal{align-items:center}.modal .box{border-radius:16px}}
+.blk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0}
+.timer{font-variant-numeric:tabular-nums;font-size:64px;font-weight:800;text-align:center;letter-spacing:.02em;margin:18px 0}
+.timer.go{color:var(--acc2)}
+.seg{display:flex;background:var(--card2);border-radius:10px;padding:3px;margin-bottom:10px}
+.seg button{flex:1;padding:8px;border-radius:8px;color:var(--mut)}
+.seg button.on{background:var(--acc);color:#111;font-weight:700}
+.login{max-width:380px;margin:12vh auto 0;padding:16px}
+.login .logo{font-size:30px;text-align:center;margin-bottom:6px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://qqvtdznpmnkdglsldmrn.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_g9CB66L6acALR7XKF1symA_19cNlJEY';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const iso = d => { const x = new Date(d); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0,10); };
+const hoje = () => iso(new Date());
+const addDias = (s, n) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() + n); return iso(d); };
+const segunda = s => { const d = new Date(s + 'T12:00:00'); const w = (d.getDay() + 6) % 7; d.setDate(d.getDate() - w); return iso(d); };
+const fmt = s => { const d = new Date(s + 'T12:00:00'); return `${DIAS[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`; };
+function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),2200); }
+function erro(e){ console.error(e); toast('Erro: ' + (e?.message || e)); }
+
+const S = { user:null, perfil:null, atleta:null, tab:null, dia:hoje(), semana:segunda(hoje()), alvo:null };
+
+const ICON = {
+  hoje:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>',
+  hist:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>',
+  crono:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>',
+  grupos:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5M15 15c3 0 6 1.5 6 4"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 13h3M13 13h3M8 17h3"/></svg>',
+  sair:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>'
+};
+
+// ---------- AUTH ----------
+async function iniciar(){
+  const { data:{ session } } = await sb.auth.getSession();
+  S.user = session?.user || null;
+  if (!S.user) return telaLogin();
+  const { data:p } = await sb.from('perfis').select('*').eq('id', S.user.id).maybeSingle();
+  S.perfil = p;
+  if (p?.papel === 'coach') { S.tab = S.tab || 'cal'; return render(); }
+  const { data:a } = await sb.from('atletas').select('*').eq('user_id', S.user.id).maybeSingle();
+  S.atleta = a;
+  S.tab = S.tab || 'hoje';
+  render();
+}
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { S.user=null; S.perfil=null; S.atleta=null; S.tab=null; telaLogin(); } });
+
+function telaLogin(modo='entrar'){
+  app.innerHTML = `<div class="login">
+    <div class="logo">NE<b>X</b>US</div>
+    <p class="mut small" style="text-align:center;margin-bottom:22px">Ciência · Constância · Inteligência</p>
+    <div class="seg"><button data-m="entrar" class="${modo==='entrar'?'on':''}">Entrar</button><button data-m="criar" class="${modo==='criar'?'on':''}">Criar conta</button></div>
+    <label>E-mail</label><input id="em" type="email" autocomplete="email" inputmode="email">
+    <label>Senha</label><input id="pw" type="password" autocomplete="${modo==='criar'?'new-password':'current-password'}">
+    ${modo==='criar'?'<p class="mut small" style="margin-top:8px">Use o mesmo e-mail que você passou para o seu coach.</p>':''}
+    <button class="btn" id="go" style="width:100%;margin-top:16px">${modo==='criar'?'Criar conta':'Entrar'}</button>
+    ${modo==='entrar'?'<button class="mut small" id="esq" style="display:block;margin:14px auto 0">Esqueci minha senha</button>':''}
+  </div>`;
+  app.querySelectorAll('.seg button').forEach(b => b.onclick = () => telaLogin(b.dataset.m));
+  $('#go').onclick = async () => {
+    const email = $('#em').value.trim(), password = $('#pw').value;
+    if (!email || !password) return toast('Preencha e-mail e senha');
+    $('#go').disabled = true;
+    const r = modo === 'criar' ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
+    $('#go').disabled = false;
+    if (r.error) return toast(traduz(r.error.message));
+    if (modo === 'criar' && !r.data.session) return toast('Conta criada! Confirme pelo link no seu e-mail e depois entre.');
+    iniciar();
+  };
+  const esq = $('#esq');
+  if (esq) esq.onclick = async () => {
+    const email = $('#em').value.trim(); if (!email) return toast('Digite seu e-mail acima');
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0] });
+    toast(error ? traduz(error.message) : 'Enviamos um link para o seu e-mail');
+  };
+}
+function traduz(m){
+  if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos';
+  if (/already registered/i.test(m)) return 'Esse e-mail já tem conta. Use "Entrar".';
+  if (/at least 6/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres';
+  if (/not confirmed/i.test(m)) return 'Confirme seu e-mail pelo link enviado antes de entrar';
+  return m;
+}
+
+// ---------- SHELL ----------
+function render(){
+  const coach = S.perfil?.papel === 'coach';
+  const tabs = coach ? [['cal','Calendário'],['grupos','Atletas'],['crono','Cronômetro']] : [['hoje','Treino'],['hist','Histórico'],['crono','Cronômetro']];
+  app.innerHTML = `<header class="top"><div class="logo">NE<b>X</b>US</div><span class="pill">${coach?'Coach':'Atleta'}</span><div class="sp"></div><button class="mut" id="sair" title="Sair" style="width:26px">${ICON.sair}</button></header>
+  <main class="wrap" id="main"></main>
+  <nav class="tabs">${tabs.map(([k,n])=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${ICON[k==='grupos'?'grupos':k]}<span>${n}</span></button>`).join('')}</nav>`;
+  $('#sair').onclick = () => { if (confirm('Sair da conta?')) sb.auth.signOut(); };
+  app.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { S.tab = b.dataset.t; render(); });
+  const m = $('#main');
+  ({ hoje:vHoje, hist:vHist, crono:vCrono, cal:vCal, grupos:vGrupos })[S.tab](m);
+}
+
+// ---------- ATLETA ----------
+async function treinosDoAtleta(ini, fim){
+  const { data, error } = await sb.from('treinos').select('*, blocos(*)').gte('data', ini).lte('data', fim).order('data');
+  if (error) throw error;
+  const porDia = {};
+  for (const t of data) (porDia[t.data] ||= []).push(t);
+  for (const d in porDia) {
+    const ind = porDia[d].filter(t => t.atleta_id);
+    if (ind.some(t => t.substitui_grupo)) porDia[d] = ind;
+    porDia[d].forEach(t => t.blocos.sort((a,b)=>a.ordem-b.ordem));
+  }
+  return porDia;
+}
+
+async function vHoje(m){
+  if (!S.atleta) { m.innerHTML = `<div class="card"><h3>Conta ainda não liberada</h3><p class="mut">Seu e-mail (${esc(S.user.email)}) ainda não está cadastrado pelo seu coach. Avise o Nicolas para liberar seu acesso.</p></div>`; return; }
+  const ini = S.semana, fim = addDias(ini, 6);
+  m.innerHTML = `<div class="row" style="margin-bottom:10px"><button class="btn sec sm" id="ant">‹</button><div class="sp" style="text-align:center" class="mut">${fmt(ini)} – ${fmt(fim)}</div><button class="btn sec sm" id="prx">›</button></div><div class="week" id="wk"></div><div id="dia"><p class="mut">Carregando…</p></div>`;
+  $('#ant').onclick = () => { S.semana = addDias(S.semana,-7); S.dia = S.semana; vHoje(m); };
+  $('#prx').onclick = () => { S.semana = addDias(S.semana,7); S.dia = S.semana; vHoje(m); };
+  let porDia;
+  try { porDia = await treinosDoAtleta(ini, fim); } catch(e){ return erro(e); }
+  $('#wk').innerHTML = [...Array(7)].map((_,i)=>{ const d=addDias(ini,i); const dt=new Date(d+'T12:00:00'); return `<button class="day ${d===S.dia?'on':''} ${porDia[d]?'has':''}" data-d="${d}"><div class="d">${DIAS[dt.getDay()]}</div><div class="n">${dt.getDate()}</div></button>`; }).join('');
+  $('#wk').querySelectorAll('.day').forEach(b => b.onclick = () => { S.dia = b.dataset.d; vHoje(m); });
+  const ts = porDia[S.dia] || [];
+  if (!ts.length) { $('#dia').innerHTML = `<div class="card"><p class="mut">Sem treino em ${fmt(S.dia)}. Descanso! 💤</p></div>`; return; }
+  const ids = ts.flatMap(t => t.blocos.map(b => b.id));
+  const { data:res } = ids.length ? await sb.from('resultados').select('*').in('bloco_id', ids).eq('atleta_id', S.atleta.id) : { data:[] };
+  const rm = Object.fromEntries((res||[]).map(r => [r.bloco_id, r]));
+  $('#dia').innerHTML = ts.map(t => `<div class="card"><h2 style="margin-top:0">${esc(t.titulo || fmt(t.data))}</h2>
+    ${t.blocos.map(b => { const r = rm[b.id]; return `<div class="bloco"><h4>${esc(b.titulo)}</h4><div class="pre">${esc(b.descricao)}</div>
+      ${b.comentario?`<div class="pre mut small" style="margin-top:6px">${esc(b.comentario)}</div>`:''}
+      ${b.video_url?`<a class="small" style="color:var(--acc2)" href="${esc(b.video_url)}" target="_blank" rel="noopener">▶ Ver vídeo</a>`:''}
+      <div class="res"><div class="row"><input placeholder="Resultado (carga, tempo, reps…)" data-r="${b.id}" value="${esc(r?.resultado||'')}" style="flex:1"><button class="btn sm" data-s="${b.id}">${r?'✓':'Salvar'}</button></div>
+      <input placeholder="Comentário (opcional)" data-c="${b.id}" value="${esc(r?.comentario||'')}" style="margin-top:6px"></div></div>`; }).join('')}
+  </div>`).join('');
+  $('#dia').querySelectorAll('[data-s]').forEach(btn => btn.onclick = async () => {
+    const id = +btn.dataset.s;
+    const resultado = $(`[data-r="${id}"]`).value.trim(), comentario = $(`[data-c="${id}"]`).value.trim();
+    btn.disabled = true;
+    const { error } = await sb.from('resultados').upsert({ bloco_id:id, atleta_id:S.atleta.id, resultado, comentario, concluido:true, atualizado_em:new Date().toISOString() }, { onConflict:'bloco_id,atleta_id' });
+    btn.disabled = false;
+    if (error) return erro(error);
+    btn.textContent = '✓'; toast('Resultado salvo');
+  });
+}
+
+async function vHist(m){
+  if (!S.atleta) return vHoje(m);
+  m.innerHTML = `<h2>Histórico</h2><input id="bus" placeholder="Buscar exercício (ex.: snatch, back squat)"><div id="lst" style="margin-top:12px"><p class="mut">Carregando…</p></div>`;
+  const { data, error } = await sb.from('resultados').select('resultado, comentario, atualizado_em, blocos(titulo, descricao, treinos(data))').eq('atleta_id', S.atleta.id).order('atualizado_em', { ascending:false }).limit(300);
+  if (error) return erro(error);
+  const rows = data.filter(r => r.blocos).sort((a,b) => (b.blocos.treinos?.data||'').localeCompare(a.blocos.treinos?.data||''));
+  const draw = q => { const f = q ? rows.filter(r => (r.blocos.titulo + ' ' + r.blocos.descricao).toLowerCase().includes(q.toLowerCase())) : rows;
+    $('#lst').innerHTML = f.length ? `<div class="card list">${f.map(r => `<div class="it"><div style="flex:1"><div class="small mut">${r.blocos.treinos?fmt(r.blocos.treinos.data):''} · ${esc(r.blocos.titulo)}</div><div style="font-weight:600">${esc(r.resultado||'—')}</div>${r.comentario?`<div class="small mut">${esc(r.comentario)}</div>`:''}</div></div>`).join('')}</div>` : '<p class="mut">Nenhum resultado ainda.</p>'; };
+  draw(''); $('#bus').oninput = e => draw(e.target.value);
+}
+
+// ---------- CRONÔMETRO ----------
+const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ min:10, trab:40, desc:20, rounds:8, emom:60, emomR:10 } };
+let wake = null;
+async function pedeWake(){ try { wake = await navigator.wakeLock?.request('screen'); } catch{} }
+function bip(f=880, d=.15){ try { const c = bip.c ||= new (window.AudioContext||window.webkitAudioContext)(); const o=c.createOscillator(), g=c.createGain(); o.frequency.value=f; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(.3,c.currentTime); o.start(); o.stop(c.currentTime+d); } catch{} }
+const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; };
+function vCrono(m){
+  const c = CR.cfg;
+  m.innerHTML = `<div class="seg">${[['cron','Cronômetro'],['timer','Timer'],['tabata','Intervalo'],['emom','EMOM']].map(([k,n])=>`<button data-k="${k}" class="${CR.modo===k?'on':''}">${n}</button>`).join('')}</div>
+  <div class="card">
+    <div id="cfg" class="row">${CR.modo==='timer'?`<div style="flex:1"><label>Minutos</label><input type="number" id="c_min" value="${c.min}"></div>`:''}
+    ${CR.modo==='tabata'?`<div style="flex:1"><label>Trabalho (s)</label><input type="number" id="c_trab" value="${c.trab}"></div><div style="flex:1"><label>Descanso (s)</label><input type="number" id="c_desc" value="${c.desc}"></div><div style="flex:1"><label>Rounds</label><input type="number" id="c_rounds" value="${c.rounds}"></div>`:''}
+    ${CR.modo==='emom'?`<div style="flex:1"><label>A cada (s)</label><input type="number" id="c_emom" value="${c.emom}"></div><div style="flex:1"><label>Rounds</label><input type="number" id="c_emomR" value="${c.emomR}"></div>`:''}</div>
+    <div class="mut small" id="fase" style="text-align:center;margin-top:10px">&nbsp;</div>
+    <div class="timer" id="tm">00:00</div>
+    <div class="row" style="justify-content:center"><button class="btn" id="play" style="min-width:120px">${CR.rod?'Pausar':'Iniciar'}</button><button class="btn sec" id="zerar">Zerar</button></div>
+  </div><p class="mut small" style="text-align:center">A tela fica acesa enquanto o cronômetro roda.</p>`;
+  m.querySelectorAll('.seg button').forEach(b => b.onclick = () => { parar(); CR.acum=0; CR.modo=b.dataset.k; vCrono(m); });
+  m.querySelectorAll('#cfg input').forEach(i => i.onchange = () => { c[i.id.slice(2)] = Math.max(1, +i.value||1); });
+  $('#play').onclick = () => { if (CR.rod) { CR.acum += (Date.now()-CR.ini)/1000; parar(); } else { CR.rod=true; CR.ini=Date.now(); pedeWake(); CR.iv=setInterval(tick,200); bip(660); } $('#play').textContent = CR.rod?'Pausar':'Iniciar'; };
+  $('#zerar').onclick = () => { parar(); CR.acum=0; CR.ult=null; tick(); $('#play').textContent='Iniciar'; };
+  tick();
+}
+function parar(){ CR.rod=false; clearInterval(CR.iv); try{ wake?.release(); }catch{} wake=null; }
+function tick(){
+  const el = $('#tm'); if (!el) return;
+  const t = CR.acum + (CR.rod ? (Date.now()-CR.ini)/1000 : 0), c = CR.cfg; let txt, fase = '';
+  if (CR.modo==='cron') txt = mmss(Math.floor(t));
+  else if (CR.modo==='timer') { const r = c.min*60 - t; txt = mmss(r); if (r<=0 && CR.rod){ parar(); bip(440,.6); fase='Fim!'; } }
+  else if (CR.modo==='tabata') { const ciclo=c.trab+c.desc, n=Math.floor(t/ciclo); if (n>=c.rounds){ txt='00:00'; fase='Fim!'; if(CR.rod){parar();bip(440,.6);} } else { const p=t%ciclo, tr=p<c.trab; txt=mmss(tr?c.trab-p:ciclo-p); fase=`Round ${n+1}/${c.rounds} · ${tr?'TRABALHO':'descanso'}`; const k=n+'-'+tr; if(CR.ult!==k){ if(CR.rod&&CR.ult) bip(tr?880:520); CR.ult=k; } } }
+  else { const n=Math.floor(t/c.emom); if (n>=c.emomR){ txt='00:00'; fase='Fim!'; if(CR.rod){parar();bip(440,.6);} } else { txt=mmss(c.emom - t%c.emom); fase=`Minuto ${n+1}/${c.emomR}`; if(CR.ult!==n){ if(CR.rod&&CR.ult!=null) bip(880); CR.ult=n; } } }
+  el.textContent = txt; el.classList.toggle('go', CR.rod); const f=$('#fase'); if (f) f.innerHTML = fase || '&nbsp;';
+  const pl=$('#play'); if (pl && !CR.rod) pl.textContent='Iniciar';
+}
+
+// ---------- COACH: CALENDÁRIO ----------
+let CACHE = { grupos:[], atletas:[], vinc:[] };
+async function carregaBase(){
+  const [g,a,v] = await Promise.all([ sb.from('grupos').select('*').order('nome'), sb.from('atletas').select('*').order('nome'), sb.from('grupo_atletas').select('*') ]);
+  if (g.error||a.error||v.error) throw (g.error||a.error||v.error);
+  CACHE = { grupos:g.data, atletas:a.data, vinc:v.data };
+}
+
+async function vCal(m){
+  m.innerHTML = '<p class="mut">Carregando…</p>';
+  try { await carregaBase(); } catch(e){ return erro(e); }
+  if (!S.alvo && CACHE.grupos[0]) S.alvo = 'g:' + CACHE.grupos[0].id;
+  const opts = `<optgroup label="Grupos">${CACHE.grupos.map(g=>`<option value="g:${g.id}" ${S.alvo==='g:'+g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}</optgroup><optgroup label="Individual">${CACHE.atletas.filter(a=>a.ativo).map(a=>`<option value="a:${a.id}" ${S.alvo==='a:'+a.id?'selected':''}>${esc(a.nome)}</option>`).join('')}</optgroup>`;
+  const ini = S.semana, fim = addDias(ini,6);
+  m.innerHTML = `<div class="row" style="margin-bottom:10px"><select id="alvo" style="flex:1;min-width:180px">${opts}</select></div>
+  <div class="row" style="margin-bottom:12px"><button class="btn sec sm" id="ant">‹</button><div class="sp" style="text-align:center">${fmt(ini)} – ${fmt(fim)}</div><button class="btn sec sm" id="prx">›</button><button class="btn sec sm" id="hj">Hoje</button><button class="btn sec sm" id="cp">Copiar semana…</button></div>
+  <div class="cal" id="cal"></div>`;
+  if (!CACHE.grupos.length) { $('#cal').outerHTML = '<div class="card"><p class="mut">Crie um grupo na aba Atletas para começar.</p></div>'; }
+  $('#alvo').onchange = e => { S.alvo = e.target.value; vCal(m); };
+  $('#ant').onclick = () => { S.semana = addDias(S.semana,-7); vCal(m); };
+  $('#prx').onclick = () => { S.semana = addDias(S.semana,7); vCal(m); };
+  $('#hj').onclick = () => { S.semana = segunda(hoje()); vCal(m); };
+  $('#cp').onclick = () => copiarSemana(m);
+  if (!S.alvo) return;
+  const [tipo, id] = S.alvo.split(':');
+  const q = sb.from('treinos').select('*, blocos(id,titulo,ordem)').gte('data',ini).lte('data',fim).order('id');
+  const { data, error } = await (tipo==='g' ? q.eq('grupo_id', id) : q.eq('atleta_id', id));
+  if (error) return erro(error);
+  let grupoDoAtleta = [];
+  if (tipo==='a') { const gids = CACHE.vinc.filter(v=>v.atleta_id===id).map(v=>v.grupo_id); if (gids.length) { const r = await sb.from('treinos').select('id,data,titulo,grupo_id').in('grupo_id',gids).gte('data',ini).lte('data',fim); grupoDoAtleta = r.data||[]; } }
+  const cal = $('#cal'); if (!cal) return;
+  cal.innerHTML = [...Array(7)].map((_,i)=>{ const d=addDias(ini,i); const ts=data.filter(t=>t.data===d); const gs=grupoDoAtleta.filter(t=>t.data===d);
+    return `<div class="c"><div class="h"><span>${fmt(d)}</span><button class="mut" data-novo="${d}" title="Novo treino">＋</button></div>
+    ${ts.map(t=>`<button class="t ${tipo==='a'?'ind':''}" data-t="${t.id}"><b>${esc(t.titulo||'Treino')}</b>${t.substitui_grupo?' <span class="pill">substitui grupo</span>':''}<div class="mut small">${t.blocos.sort((a,b)=>a.ordem-b.ordem).map(b=>esc(b.titulo)).join(' · ')}</div></button>`).join('')}
+    ${gs.map(t=>`<div class="mut small" style="margin-bottom:4px">Grupo: ${esc(CACHE.grupos.find(g=>g.id===t.grupo_id)?.nome)} – ${esc(t.titulo)} <button class="btn sec sm" data-ind="${t.id}">Ajustar p/ atleta</button></div>`).join('')}
+    </div>`; }).join('');
+  cal.querySelectorAll('[data-novo]').forEach(b => b.onclick = () => editor({ data:b.dataset.novo, titulo:'', blocos:[{titulo:'',descricao:'',comentario:''}], [tipo==='g'?'grupo_id':'atleta_id']: tipo==='g'?+id:id }, m));
+  cal.querySelectorAll('[data-t]').forEach(b => b.onclick = async () => { const { data:t, error } = await sb.from('treinos').select('*, blocos(*)').eq('id', b.dataset.t).single(); if (error) return erro(error); t.blocos.sort((a,b)=>a.ordem-b.ordem); editor(t, m); });
+  cal.querySelectorAll('[data-ind]').forEach(b => b.onclick = async () => { const { data:t } = await sb.from('treinos').select('*, blocos(*)').eq('id', b.dataset.ind).single(); t.blocos.sort((a,b)=>a.ordem-b.ordem);
+    editor({ data:t.data, titulo:t.titulo, atleta_id:id, substitui_grupo:true, blocos:t.blocos.map(({titulo,descricao,comentario,video_url})=>({titulo,descricao,comentario,video_url})) }, m); });
+}
+
+function editor(t, m){
+  const md = document.createElement('div'); md.className='modal';
+  const alvoNome = t.grupo_id ? CACHE.grupos.find(g=>g.id===t.grupo_id)?.nome : CACHE.atletas.find(a=>a.id===t.atleta_id)?.nome;
+  const draw = () => {
+    md.innerHTML = `<div class="box"><div class="row"><h2 style="margin:0">${t.id?'Editar':'Novo'} treino</h2><div class="sp"></div><button class="btn sec sm" id="x">Fechar</button></div>
+    <p class="mut small">${esc(alvoNome||'')}</p>
+    <div class="row"><div style="flex:1"><label>Data</label><input type="date" id="dt" value="${t.data}"></div><div style="flex:2"><label>Título</label><input id="tt" value="${esc(t.titulo)}" placeholder="Ex.: SEGUNDA – Força + Snatch"></div></div>
+    ${t.atleta_id?`<label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin-top:12px"><input type="checkbox" id="sub" style="width:auto;margin-right:8px" ${t.substitui_grupo?'checked':''}>Substituir o treino do grupo neste dia (o atleta só vê este)</label>`:''}
+    <div id="bls">${t.blocos.map((b,i)=>`<div class="blk"><div class="row"><span class="mut small">Bloco ${i+1}</span><div class="sp"></div>
+      <button class="btn sec sm" data-up="${i}" ${i?'':'disabled'}>↑</button><button class="btn sec sm" data-dn="${i}" ${i<t.blocos.length-1?'':'disabled'}>↓</button><button class="btn dan sm" data-rm="${i}">Remover</button></div>
+      <label>Título da atividade</label><input data-f="titulo" data-i="${i}" value="${esc(b.titulo)}">
+      <label>Descrição</label><textarea data-f="descricao" data-i="${i}">${esc(b.descricao)}</textarea>
+      <label>Observação</label><textarea data-f="comentario" data-i="${i}" style="min-height:60px">${esc(b.comentario)}</textarea>
+      <label>Link do vídeo (opcional)</label><input data-f="video_url" data-i="${i}" value="${esc(b.video_url||'')}" placeholder="https://youtube.com/…"></div>`).join('')}</div>
+    <button class="btn sec" id="add" style="width:100%">＋ Adicionar bloco</button>
+    <div class="row" style="margin-top:16px"><button class="btn" id="salvar" style="flex:1">Salvar e publicar</button>${t.id?'<button class="btn sec" id="dup">Duplicar…</button><button class="btn sec" id="ver">Resultados</button><button class="btn dan" id="del">Apagar</button>':''}</div></div>`;
+    const sync = () => { md.querySelectorAll('[data-f]').forEach(e => t.blocos[+e.dataset.i][e.dataset.f] = e.value); t.data = $('#dt').value; t.titulo = $('#tt').value; const s=md.querySelector('#sub'); if (s) t.substitui_grupo = s.checked; };
+    md.querySelector('#x').onclick = () => md.remove();
+    md.querySelector('#add').onclick = () => { sync(); t.blocos.push({titulo:'',descricao:'',comentario:''}); draw(); };
+    md.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { sync(); t.blocos.splice(+b.dataset.rm,1); draw(); });
+    md.querySelectorAll('[data-up]').forEach(b => b.onclick = () => { sync(); const i=+b.dataset.up; [t.blocos[i-1],t.blocos[i]]=[t.blocos[i],t.blocos[i-1]]; draw(); });
+    md.querySelectorAll('[data-dn]').forEach(b => b.onclick = () => { sync(); const i=+b.dataset.dn; [t.blocos[i+1],t.blocos[i]]=[t.blocos[i],t.blocos[i+1]]; draw(); });
+    md.querySelector('#salvar').onclick = async () => { sync(); try { await salvarTreino(t); toast('Treino publicado'); md.remove(); vCal(m); } catch(e){ erro(e); } };
+    const del = md.querySelector('#del'); if (del) del.onclick = async () => { if (!confirm('Apagar este treino e os resultados dos atletas nele?')) return; const { error } = await sb.from('treinos').delete().eq('id', t.id); if (error) return erro(error); md.remove(); vCal(m); };
+    const dup = md.querySelector('#dup'); if (dup) dup.onclick = async () => { sync(); const nd = prompt('Duplicar para qual data? (AAAA-MM-DD)', addDias(t.data,7)); if (!nd) return; try { await salvarTreino({ ...t, id:null, data:nd, blocos:t.blocos.map(({titulo,descricao,comentario,video_url})=>({titulo,descricao,comentario,video_url})) }); toast('Duplicado'); md.remove(); vCal(m); } catch(e){ erro(e); } };
+    const ver = md.querySelector('#ver'); if (ver) ver.onclick = () => resultados(t);
+  };
+  draw(); document.body.appendChild(md);
+}
+
+async function salvarTreino(t){
+  const row = { data:t.data, titulo:t.titulo||'', grupo_id:t.grupo_id||null, atleta_id:t.atleta_id||null, substitui_grupo:!!t.substitui_grupo, publicado:true };
+  let id = t.id;
+  if (id) { const { error } = await sb.from('treinos').update(row).eq('id', id); if (error) throw error; const d = await sb.from('blocos').delete().eq('treino_id', id); if (d.error) throw d.error; }
+  else { const { data, error } = await sb.from('treinos').insert(row).select('id').single(); if (error) throw error; id = data.id; }
+  const bl = t.blocos.filter(b => (b.titulo||b.descricao||'').trim()).map((b,i) => ({ treino_id:id, ordem:i, titulo:b.titulo||'', descricao:b.descricao||'', comentario:b.comentario||'', video_url:b.video_url||null }));
+  if (bl.length) { const { error } = await sb.from('blocos').insert(bl); if (error) throw error; }
+  return id;
+}
+
+async function resultados(t){
+  const md = document.createElement('div'); md.className='modal';
+  md.innerHTML = `<div class="box"><div class="row"><h2 style="margin:0">Resultados</h2><div class="sp"></div><button class="btn sec sm" id="x">Fechar</button></div><p class="mut small">${fmt(t.data)} · ${esc(t.titulo)}</p><div id="rs"><p class="mut">Carregando…</p></div></div>`;
+  document.body.appendChild(md); md.querySelector('#x').onclick = () => md.remove();
+  const { data:bl } = await sb.from('blocos').select('id,titulo,ordem').eq('treino_id', t.id).order('ordem');
+  const { data:rs, error } = await sb.from('resultados').select('*, atletas(nome)').in('bloco_id', (bl||[]).map(b=>b.id));
+  if (error) return erro(error);
+  md.querySelector('#rs').innerHTML = (bl||[]).map(b => { const r = rs.filter(x=>x.bloco_id===b.id); return `<div class="card"><h3>${esc(b.titulo)}</h3>${r.length?`<div class="list">${r.map(x=>`<div class="it"><div style="flex:1"><b>${esc(x.atletas?.nome)}</b><div>${esc(x.resultado||'✓')}</div>${x.comentario?`<div class="mut small">${esc(x.comentario)}</div>`:''}</div></div>`).join('')}</div>`:'<p class="mut small">Ninguém registrou ainda.</p>'}</div>`; }).join('') || '<p class="mut">Sem blocos.</p>';
+}
+
+async function copiarSemana(m){
+  if (!S.alvo) return;
+  const de = prompt('Copiar a semana que começa em (segunda, AAAA-MM-DD):', addDias(S.semana,-7)); if (!de) return;
+  const para = prompt('Para a semana que começa em (segunda, AAAA-MM-DD):', S.semana); if (!para) return;
+  const [tipo,id] = S.alvo.split(':'); const q = sb.from('treinos').select('*, blocos(*)').gte('data', segunda(de)).lte('data', addDias(segunda(de),6));
+  const { data, error } = await (tipo==='g' ? q.eq('grupo_id', id) : q.eq('atleta_id', id)); if (error) return erro(error);
+  if (!data.length) return toast('Nada para copiar nessa semana');
+  const delta = Math.round((new Date(segunda(para)) - new Date(segunda(de))) / 864e5);
+  try { for (const t of data) { t.blocos.sort((a,b)=>a.ordem-b.ordem); await salvarTreino({ ...t, id:null, data:addDias(t.data, delta) }); } toast(`${data.length} treino(s) copiados`); S.semana = segunda(para); vCal(m); } catch(e){ erro(e); }
+}
+
+// ---------- COACH: GRUPOS E ATLETAS ----------
+async function vGrupos(m){
+  m.innerHTML = '<p class="mut">Carregando…</p>';
+  try { await carregaBase(); } catch(e){ return erro(e); }
+  const nGrupo = gid => CACHE.vinc.filter(v=>v.grupo_id===gid).length;
+  m.innerHTML = `<h2>Grupos</h2><div class="card list">${CACHE.grupos.map(g=>`<div class="it"><div style="flex:1"><b>${esc(g.nome)}</b> <span class="mut small">${nGrupo(g.id)} atletas</span></div><button class="btn sec sm" data-rg="${g.id}">Renomear</button></div>`).join('') || '<p class="mut">Nenhum grupo ainda.</p>'}
+    <div class="row" style="margin-top:10px"><input id="ng" placeholder="Nome do novo grupo" style="flex:1"><button class="btn" id="cg">Criar</button></div></div>
+  <h2>Atletas</h2><input id="ba" placeholder="Buscar atleta" style="margin-bottom:10px"><div class="card list" id="la"></div>
+  <div class="card"><h3>Novo atleta</h3><label>Nome</label><input id="an"><label>E-mail (o atleta cria a conta com esse e-mail)</label><input id="ae" type="email">
+    <label>Grupos</label><div class="row">${CACHE.grupos.map(g=>`<label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin:0"><input type="checkbox" class="ag" value="${g.id}" style="width:auto;margin-right:4px">${esc(g.nome)}</label>`).join('')}</div>
+    <button class="btn" id="ca" style="margin-top:12px">Cadastrar atleta</button></div>`;
+  const drawA = q => { const f = CACHE.atletas.filter(a => !q || a.nome.toLowerCase().includes(q.toLowerCase()));
+    $('#la').innerHTML = f.map(a => `<div class="it"><div style="flex:1"><b style="${a.ativo?'':'opacity:.5'}">${esc(a.nome)}</b><div class="mut small">${esc(a.email||'sem e-mail')} · ${a.user_id?'<span class="ok">conta ativa</span>':'sem conta ainda'} · ${CACHE.vinc.filter(v=>v.atleta_id===a.id).map(v=>esc(CACHE.grupos.find(g=>g.id===v.grupo_id)?.nome)).join(', ')||'sem grupo'}</div></div><button class="btn sec sm" data-ea="${a.id}">Editar</button></div>`).join('') || '<p class="mut">Nenhum atleta.</p>';
+    $('#la').querySelectorAll('[data-ea]').forEach(b => b.onclick = () => editarAtleta(CACHE.atletas.find(a=>a.id===b.dataset.ea), m)); };
+  drawA(''); $('#ba').oninput = e => drawA(e.target.value);
+  $('#cg').onclick = async () => { const nome = $('#ng').value.trim(); if (!nome) return; const { error } = await sb.from('grupos').insert({ nome }); if (error) return erro(error); vGrupos(m); };
+  m.querySelectorAll('[data-rg]').forEach(b => b.onclick = async () => { const g = CACHE.grupos.find(x=>x.id===+b.dataset.rg); const nome = prompt('Novo nome do grupo', g.nome); if (!nome) return; const { error } = await sb.from('grupos').update({ nome }).eq('id', g.id); if (error) return erro(error); vGrupos(m); });
+  $('#ca').onclick = async () => { const nome = $('#an').value.trim(), email = $('#ae').value.trim().toLowerCase() || null; if (!nome) return toast('Coloque o nome');
+    const { data, error } = await sb.from('atletas').insert({ nome, email }).select('id').single(); if (error) return erro(error);
+    const gs = [...m.querySelectorAll('.ag:checked')].map(c => ({ grupo_id:+c.value, atleta_id:data.id }));
+    if (gs.length) { const r = await sb.from('grupo_atletas').insert(gs); if (r.error) return erro(r.error); }
+    toast('Atleta cadastrado'); vGrupos(m); };
+}
+
+function editarAtleta(a, m){
+  const md = document.createElement('div'); md.className='modal';
+  const meus = CACHE.vinc.filter(v=>v.atleta_id===a.id).map(v=>v.grupo_id);
+  md.innerHTML = `<div class="box"><div class="row"><h2 style="margin:0">${esc(a.nome)}</h2><div class="sp"></div><button class="btn sec sm" id="x">Fechar</button></div>
+    <label>Nome</label><input id="n" value="${esc(a.nome)}"><label>E-mail</label><input id="e" value="${esc(a.email||'')}" ${a.user_id?'disabled':''}>
+    ${a.user_id?'<p class="mut small" style="margin-top:4px">Conta já criada – o e-mail não pode mais ser trocado aqui.</p>':''}
+    <label>Grupos</label><div class="row">${CACHE.grupos.map(g=>`<label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin:0"><input type="checkbox" class="g" value="${g.id}" ${meus.includes(g.id)?'checked':''} style="width:auto;margin-right:4px">${esc(g.nome)}</label>`).join('')}</div>
+    <label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin-top:14px"><input type="checkbox" id="at" ${a.ativo?'checked':''} style="width:auto;margin-right:8px">Ativo</label>
+    <div class="row" style="margin-top:16px"><button class="btn" id="s" style="flex:1">Salvar</button><button class="btn sec" id="ind">Treinos individuais</button></div></div>`;
+  document.body.appendChild(md);
+  md.querySelector('#x').onclick = () => md.remove();
+  md.querySelector('#ind').onclick = () => { md.remove(); S.alvo = 'a:' + a.id; S.tab = 'cal'; render(); };
+  md.querySelector('#s').onclick = async () => {
+    const upd = { nome: md.querySelector('#n').value.trim(), ativo: md.querySelector('#at').checked }; if (!a.user_id) upd.email = md.querySelector('#e').value.trim().toLowerCase() || null;
+    const { error } = await sb.from('atletas').update(upd).eq('id', a.id); if (error) return erro(error);
+    const novos = [...md.querySelectorAll('.g:checked')].map(c=>+c.value);
+    const rm = meus.filter(g=>!novos.includes(g)), add = novos.filter(g=>!meus.includes(g));
+    if (rm.length) { const r = await sb.from('grupo_atletas').delete().eq('atleta_id', a.id).in('grupo_id', rm); if (r.error) return erro(r.error); }
+    if (add.length) { const r = await sb.from('grupo_atletas').insert(add.map(g=>({ grupo_id:g, atleta_id:a.id }))); if (r.error) return erro(r.error); }
+    md.remove(); toast('Salvo'); vGrupos(m);
+  };
+}
+
+iniciar();
+</script>
+</body>
+</html>

@@ -247,7 +247,7 @@ async function vHoje(m){
     ${t.blocos.map(b => { const r = rm[b.id]; return `<div class="bloco"><h4>${esc(b.titulo)}</h4><div class="pre">${esc(b.descricao)}</div>
       ${b.comentario?`<div class="pre mut small" style="margin-top:6px">${esc(b.comentario)}</div>`:''}
       ${b.video_url?`<a class="small" style="color:var(--acc2)" href="${esc(b.video_url)}" target="_blank" rel="noopener">▶ Ver vídeo</a>`:''}
-      <div class="res"><div class="row"><input placeholder="Resultado (carga, tempo, reps…)" data-r="${b.id}" value="${esc(r?.resultado||'')}" style="flex:1"><button class="btn sm" data-s="${b.id}">${r?'✓':'Salvar'}</button></div>
+      <div class="res"><div class="row"><input placeholder="Carga, tempo ou reps" data-r="${b.id}" value="${esc(r?.resultado||'')}" style="flex:1"><button class="btn sm" data-s="${b.id}">${r?'✓':'Salvar'}</button></div>
       <input placeholder="Comentário (opcional)" data-c="${b.id}" value="${esc(r?.comentario||'')}" style="margin-top:6px"></div></div>`; }).join('')}
   </div>`).join('');
   $('#dia').querySelectorAll('[data-s]').forEach(btn => btn.onclick = async () => {
@@ -334,7 +334,7 @@ async function vCal(m){
   const sig = nomeAlvo.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
   m.innerHTML = `<div class="chead"><div class="av">${esc(sig||'N')}</div><select id="alvo">${opts}</select>
     <div class="mnav"><button id="ant">‹</button><b>${esc(rotulo)}</b><button id="prx">›</button></div></div>
-  <div class="row" style="margin-bottom:10px"><div class="seg sm"><button data-md="semana" class="${S.modo==='semana'?'on':''}">SEMANA</button><button data-md="mes" class="${S.modo==='mes'?'on':''}">MÊS</button></div><div class="sp"></div><button class="btn sec sm" id="hj">Hoje</button><button class="btn sec sm" id="cp">Copiar semana…</button></div>
+  <div class="row" style="margin-bottom:10px"><div class="seg sm"><button data-md="semana" class="${S.modo==='semana'?'on':''}">SEMANA</button><button data-md="mes" class="${S.modo==='mes'?'on':''}">MÊS</button></div><div class="sp"></div><button class="btn sec sm" id="hj">Hoje</button><button class="btn sec sm" id="cp">Copiar semana…</button>${CACHE.grupos.some(g=>g.cc_id)?'<button class="btn sec sm" id="sync" title="Trazer treinos do Coach Control">↻ CC</button>':''}</div>
   <div id="cal"><p class="mut">Carregando treinos…</p></div>`;
   if (!CACHE.grupos.length) { $('#cal').innerHTML = '<div class="card"><p class="mut">Crie um grupo na aba Atletas para começar.</p></div>'; }
   $('#alvo').onchange = e => { S.alvo = e.target.value; vCal(m); };
@@ -343,6 +343,7 @@ async function vCal(m){
   $('#hj').onclick = () => { S.ref = hoje(); vCal(m); };
   m.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { S.modo = b.dataset.md; vCal(m); });
   $('#cp').onclick = () => { S.semana = domingo(S.ref); copiarSemana(m); };
+  const sy = $('#sync'); if (sy) sy.onclick = () => telaSyncCC(m, ini, fim);
   if (!S.alvo) return;
   const [tipo, id] = S.alvo.split(':');
   const q = sb.from('treinos').select('*, blocos(id,titulo,ordem)').gte('data',ini).lte('data',fim).order('id');
@@ -404,11 +405,103 @@ function editor(t, m){
 async function salvarTreino(t){
   const row = { data:t.data, titulo:t.titulo||'', grupo_id:t.grupo_id||null, atleta_id:t.atleta_id||null, substitui_grupo:!!t.substitui_grupo, publicado:true };
   let id = t.id;
-  if (id) { const { error } = await sb.from('treinos').update(row).eq('id', id); if (error) throw error; const d = await sb.from('blocos').delete().eq('treino_id', id); if (d.error) throw d.error; }
+  if (id) { const { error } = await sb.from('treinos').update(row).eq('id', id); if (error) throw error; }
   else { const { data, error } = await sb.from('treinos').insert(row).select('id').single(); if (error) throw error; id = data.id; }
-  const bl = t.blocos.filter(b => (b.titulo||b.descricao||'').trim()).map((b,i) => ({ treino_id:id, ordem:i, titulo:b.titulo||'', descricao:b.descricao||'', comentario:b.comentario||'', video_url:b.video_url||null }));
-  if (bl.length) { const { error } = await sb.from('blocos').insert(bl); if (error) throw error; }
+  const bl = t.blocos.filter(b => (b.titulo||b.descricao||'').trim()).map(b => ({ id: t.id ? b.id : undefined, titulo:b.titulo||'', descricao:b.descricao||'', comentario:b.comentario||'', video_url:b.video_url||null }));
+  await salvarBlocos(id, bl, !!t.id);
   return id;
+}
+
+// Atualiza os blocos sem apagar os que continuam (assim os resultados dos atletas não se perdem).
+async function salvarBlocos(treinoId, blocos, existe){
+  let antigos = [];
+  if (existe) { const r = await sb.from('blocos').select('id,ordem').eq('treino_id', treinoId).order('ordem'); if (r.error) throw r.error; antigos = r.data; }
+  const usados = new Set();
+  const novos = [];
+  for (let i = 0; i < blocos.length; i++) {
+    const b = blocos[i];
+    const alvo = b.id ? antigos.find(a => a.id === b.id) : (blocos.some(x => x.id) ? null : antigos.find(a => a.ordem === i && !usados.has(a.id)));
+    const row = { ordem:i, titulo:b.titulo||'', descricao:b.descricao||'', comentario:b.comentario||'', video_url:b.video_url||null };
+    if (alvo) { usados.add(alvo.id); const { error } = await sb.from('blocos').update(row).eq('id', alvo.id); if (error) throw error; }
+    else novos.push({ treino_id:treinoId, ...row });
+  }
+  const sobra = antigos.filter(a => !usados.has(a.id)).map(a => a.id);
+  if (sobra.length) { const { error } = await sb.from('blocos').delete().in('id', sobra); if (error) throw error; }
+  if (novos.length) { const { error } = await sb.from('blocos').insert(novos); if (error) throw error; }
+}
+
+// ---------- SINCRONIZAR COM O COACH CONTROL ----------
+const CC_API = 'https://api.coachcontrol.com.br/';
+function ccSessao(){ try { return JSON.parse(sessionStorage.getItem('cc') || 'null'); } catch { return null; } }
+async function ccLogin(email, senha){
+  const r = await fetch(CC_API + 'login', { method:'POST', headers:{ 'Content-Type':'application/json', Accept:'application/json' }, body: JSON.stringify({ email, senha, tipo:'C', plataforma:'Desktop', tokenNotificacao:null }) });
+  if (!r.ok) throw new Error(r.status === 401 || r.status === 400 ? 'E-mail ou senha do Coach Control incorretos' : 'Coach Control respondeu ' + r.status);
+  const j = await r.json();
+  const u = j.usuario?.token ? j.usuario : j;
+  const token = u.token, coach = u.usuario?.id ?? u.id;
+  if (!token || !coach) throw new Error('Login no Coach Control não retornou o acesso esperado');
+  const s = { token, coach }; try { sessionStorage.setItem('cc', JSON.stringify(s)); } catch {}
+  return s;
+}
+async function ccTreinosGrupo(s, idgrupo, ini, fim){
+  const r = await fetch(CC_API + 'grupoTreino/getByCoachAndAlunoAndDtInicialAndDtFinal', { method:'POST', headers:{ 'Content-Type':'application/json', Accept:'application/json', Authorization:'Bearer ' + s.token }, body: JSON.stringify({ idcoach:String(s.coach), idgrupo:String(idgrupo), dataInicial:ini, dataFinal:fim }) });
+  if (r.status === 401 || r.status === 403) { try { sessionStorage.removeItem('cc'); } catch {} throw new Error('Acesso ao Coach Control expirou. Entre de novo.'); }
+  if (!r.ok) throw new Error('Coach Control respondeu ' + r.status);
+  return (await r.json()).grupoTreinos || [];
+}
+async function sincronizarCC(s, ini, fim, log){
+  const grupos = CACHE.grupos.filter(g => g.cc_id);
+  if (!grupos.length) throw new Error('Nenhum grupo ligado ao Coach Control');
+  const tot = { novos:0, atualizados:0, iguais:0 };
+  for (const g of grupos) {
+    log(`Lendo ${g.nome} no Coach Control…`);
+    const lista = await ccTreinosGrupo(s, g.cc_id, ini, fim);
+    const ids = lista.map(t => t.id);
+    const ex = ids.length ? await sb.from('treinos').select('id,cc_id,data,titulo,blocos(id,ordem,titulo,descricao,video_url)').in('cc_id', ids) : { data:[] };
+    if (ex.error) throw ex.error;
+    for (const t of lista) {
+      const bl = (t.grupoAtividade || []).sort((a,b) => a.ordem - b.ordem).map(a => ({ titulo:a.titulo||'', descricao:a.descricao||'', comentario:'', video_url:a.link_video || a.bibliotecaVideo?.link || a.bibliotecaVideo?.link_video || null }));
+      const atual = ex.data.find(x => x.cc_id === t.id);
+      if (!atual) {
+        const r = await sb.from('treinos').insert({ data:t.data, titulo:t.descricao||'', grupo_id:g.id, atleta_id:null, substitui_grupo:false, publicado:true, cc_id:t.id }).select('id').single();
+        if (r.error) throw r.error;
+        await salvarBlocos(r.data.id, bl, false); tot.novos++; continue;
+      }
+      const velhos = (atual.blocos || []).sort((a,b) => a.ordem - b.ordem);
+      const igual = atual.data === t.data && atual.titulo === (t.descricao||'') && velhos.length === bl.length && bl.every((b,i) => velhos[i].titulo === b.titulo && velhos[i].descricao === b.descricao && (velhos[i].video_url||null) === b.video_url);
+      if (igual) { tot.iguais++; continue; }
+      const u = await sb.from('treinos').update({ data:t.data, titulo:t.descricao||'' }).eq('id', atual.id); if (u.error) throw u.error;
+      await salvarBlocos(atual.id, bl, true); tot.atualizados++;
+    }
+  }
+  return tot;
+}
+function telaSyncCC(m, ini, fim){
+  const md = document.createElement('div'); md.className = 'modal';
+  const draw = () => {
+    const s = ccSessao();
+    md.innerHTML = `<div class="box"><div class="row"><h2 style="margin:0">Sincronizar com o CC</h2><div class="sp"></div><button class="btn sec sm" id="x">Fechar</button></div>
+      <p class="mut small">Traz do Coach Control os treinos dos grupos ligados (${esc(CACHE.grupos.filter(g=>g.cc_id).map(g=>g.nome).join(', ') || 'nenhum')}) de <b>${fmt(ini)}</b> a <b>${fmt(fim)}</b>. Só lê do CC, não muda nada lá. Treinos já trazidos são atualizados sem apagar os resultados dos atletas.</p>
+      ${s ? '' : `<label>E-mail do Coach Control</label><input id="cce" type="email" autocomplete="username"><label>Senha do Coach Control</label><input id="ccp" type="password" autocomplete="current-password"><p class="mut small" style="margin-top:6px">A senha vai direto para o Coach Control e não fica salva. O acesso vale até você fechar o app.</p>`}
+      <button class="btn" id="go" style="width:100%;margin-top:14px">Sincronizar</button>
+      ${s ? '<button class="mut small" id="sair" style="display:block;margin:12px auto 0">Usar outra conta do CC</button>' : ''}
+      <div id="lg" class="mut small" style="margin-top:12px"></div></div>`;
+    md.querySelector('#x').onclick = () => md.remove();
+    const sair = md.querySelector('#sair'); if (sair) sair.onclick = () => { try { sessionStorage.removeItem('cc'); } catch {} draw(); };
+    const lg = md.querySelector('#lg'); const log = t => lg.textContent = t;
+    md.querySelector('#go').onclick = async (e) => {
+      e.target.disabled = true;
+      try {
+        let ss = ccSessao();
+        if (!ss) { const em = md.querySelector('#cce').value.trim(), pw = md.querySelector('#ccp').value; if (!em || !pw) { e.target.disabled = false; return log('Preencha e-mail e senha do Coach Control.'); } log('Entrando no Coach Control…'); ss = await ccLogin(em, pw); }
+        const r = await sincronizarCC(ss, ini, fim, log);
+        toast('Sincronizado com o CC');
+        md.remove(); vCal(m);
+        setTimeout(() => toast(`${r.novos} novo(s), ${r.atualizados} atualizado(s), ${r.iguais} sem mudança`), 300);
+      } catch(err) { e.target.disabled = false; log('Erro: ' + (err?.message || err)); if (!ccSessao()) draw(); }
+    };
+  };
+  draw(); document.body.appendChild(md);
 }
 
 async function resultados(t){

@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nexus">
 <title>Nexus</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35' fill='%237B2FF7' stroke='%237B2FF7' stroke-width='6' stroke-linejoin='round'/%3E%3Cpath d='M26 66 C 36 66, 40 84, 52 82 C 66 80, 76 38, 100 34' fill='none' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3Ccircle cx='100' cy='34' r='8' fill='white'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#0A0A0F;--card:#0D0B14;--card2:#160F2A;--line:#231E33;--txt:#FFFFFF;--mut:#9A94B0;--acc:#7B2FF7;--acc2:#C4B5FD;--ok:#2EE06A;--err:#F26464}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -18,6 +19,7 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none}
 .wrap{max-width:820px;margin:0 auto;padding:16px}
+.wrap.wide{max-width:1240px}
 header.top{position:sticky;top:0;z-index:5;background:rgba(10,10,15,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:10px}
 .logo{font-weight:800;letter-spacing:.3em;font-size:17px}
 .logo b{color:var(--acc)}
@@ -74,6 +76,41 @@ nav.tabs svg{width:22px;height:22px}
 .login{max-width:380px;margin:12vh auto 0;padding:16px}
 .login .logo{font-size:30px;text-align:center;margin-bottom:6px}
 .hide{display:none!important}
+.sym{width:30px;height:30px;flex:none}
+header.top{justify-content:center}
+header.top .brand{display:flex;align-items:center;gap:8px;position:absolute;left:50%;transform:translateX(-50%)}
+header.top .brand .logo{font-size:18px}
+.lock{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:8px}
+.lock .sym{width:64px;height:64px}
+.lock .nm{font-weight:800;font-size:40px;letter-spacing:3px;line-height:1}
+.lock .tr{font-weight:600;font-size:11px;letter-spacing:9px;color:var(--acc2);margin-top:6px}
+.chead{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.av{width:42px;height:42px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.chead select{width:auto;flex:1;min-width:140px;background:transparent;border:0;font-weight:800;font-size:17px;padding:4px}
+.mnav{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:4px 6px}
+.mnav b{min-width:120px;text-align:center;font-size:14px}
+.mnav button{width:30px;height:30px;border-radius:50%;font-size:18px}
+.seg.sm{display:inline-flex;margin:0}
+.seg.sm button{padding:6px 16px;font-size:13px;font-weight:700;letter-spacing:.04em}
+.mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.mcal .wd{padding:8px 2px;text-align:center;font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;border-bottom:1px solid var(--line)}
+.mcal .dn{background:var(--acc);color:#fff;font-weight:800;font-size:15px;padding:6px 8px;display:flex;align-items:center;justify-content:space-between;border-right:1px solid rgba(0,0,0,.25)}
+.mcal .dn.fora{background:#2a1a4d;color:#9A94B0}
+.mcal .dn.hj{background:#C4B5FD;color:#0A0A0F}
+.mcal .dn button{color:inherit;font-size:16px;line-height:1;opacity:.85}
+.mcal .cell{min-height:120px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:4px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.mcal .cell.fora{opacity:.45}
+.tc{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:5px 6px;text-align:left;width:100%;position:relative;min-width:0}
+.tc .tt{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:3px}
+.tc .bl{font-size:11px;line-height:1.35;color:var(--txt);opacity:.85;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.tc .mais{position:absolute;right:4px;bottom:4px;width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
+.tc.ind{border-color:#4b2a8f}
+.tc.grp{opacity:.55;border-style:dashed}
+.mcal.sem .cell{min-height:260px}
+.mcal.sem .tc .bl{-webkit-line-clamp:20}
+@media(max-width:560px){.tc .tt{font-size:10px}.tc .bl{font-size:10px}.mcal .dn{font-size:13px;padding:4px 5px}.mcal .dn button{display:none}.tc .mais{display:none}}
+.banner{background:var(--acc);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.banner button{background:#fff;color:#0A0A0F;border-radius:8px;padding:4px 10px;font-weight:700}
 </style>
 </head>
 <body>
@@ -125,8 +162,8 @@ sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { S.user=null; S.pe
 
 function telaLogin(modo='entrar'){
   app.innerHTML = `<div class="login">
-    <div class="logo">NE<b>X</b>US</div>
-    <p class="mut small" style="text-align:center;margin-bottom:22px">Ciência · Constância · Inteligência</p>
+    <div class="lock"><svg class="sym" viewBox="0 0 120 120" aria-hidden="true"><polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#7B2FF7" stroke-width="9" stroke-linejoin="round"/><path d="M26 66 C 36 66, 40 84, 52 82 C 66 80, 76 38, 103 33" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><circle cx="104" cy="33" r="10" fill="#C4B5FD" stroke="#0A0A0F" stroke-width="4"/></svg><div><div class="nm">NEXUS</div><div class="tr">TRAINING</div></div></div>
+    <p class="mut small" style="text-align:center;margin-bottom:22px">Treino com nexo.</p>
     <div class="seg"><button data-m="entrar" class="${modo==='entrar'?'on':''}">Entrar</button><button data-m="criar" class="${modo==='criar'?'on':''}">Criar conta</button></div>
     <label>E-mail</label><input id="em" type="email" autocomplete="email" inputmode="email">
     <label>Senha</label><input id="pw" type="password" autocomplete="${modo==='criar'?'new-password':'current-password'}">
@@ -162,12 +199,13 @@ function traduz(m){
 
 // ---------- SHELL ----------
 function render(){
-  const coach = S.perfil?.papel === 'coach';
+  const coach = S.perfil?.papel === 'coach' && !S.preview;
   const tabs = coach ? [['cal','Calendário'],['grupos','Atletas'],['crono','Cronômetro']] : [['hoje','Treino'],['hist','Histórico'],['crono','Cronômetro']];
-  app.innerHTML = `<header class="top"><div class="logo">NE<b>X</b>US</div><span class="pill">${coach?'Coach':'Atleta'}</span><div class="sp"></div><button class="mut" id="sair" title="Sair" style="width:26px">${ICON.sair}</button></header>
-  <main class="wrap" id="main"></main>
+  app.innerHTML = `${S.preview?`<div class="banner"><span style="flex:1">Visualizando como <b>${esc(S.atleta?.nome)}</b> (só leitura)</span><button id="sairprev">Voltar ao coach</button></div>`:''}<header class="top"><span class="pill">${coach?'Coach':'Atleta'}</span><div class="brand"><svg class="sym" viewBox="0 0 120 120" aria-hidden="true"><polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#7B2FF7" stroke-width="9" stroke-linejoin="round"/><path d="M26 66 C 36 66, 40 84, 52 82 C 66 80, 76 38, 103 33" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/><circle cx="104" cy="33" r="10" fill="#C4B5FD" stroke="#0A0A0F" stroke-width="4"/></svg><div class="logo">NEXUS</div></div><div class="sp"></div><button class="mut" id="sair" title="Sair" style="width:26px">${ICON.sair}</button></header>
+  <main class="wrap ${S.tab==='cal'?'wide':''}" id="main"></main>
   <nav class="tabs">${tabs.map(([k,n])=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${ICON[k==='grupos'?'grupos':k]}<span>${n}</span></button>`).join('')}</nav>`;
   $('#sair').onclick = () => { if (confirm('Sair da conta?')) sb.auth.signOut(); };
+  const sp = $('#sairprev'); if (sp) sp.onclick = () => { S.preview = false; S.atleta = null; S.tab = 'grupos'; render(); };
   app.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { S.tab = b.dataset.t; render(); });
   const m = $('#main');
   ({ hoje:vHoje, hist:vHist, crono:vCrono, cal:vCal, grupos:vGrupos })[S.tab](m);
@@ -175,7 +213,10 @@ function render(){
 
 // ---------- ATLETA ----------
 async function treinosDoAtleta(ini, fim){
-  const { data, error } = await sb.from('treinos').select('*, blocos(*)').gte('data', ini).lte('data', fim).order('data');
+  const { data:v } = await sb.from('grupo_atletas').select('grupo_id').eq('atleta_id', S.atleta.id);
+  const gids = (v||[]).map(x=>x.grupo_id);
+  const filtro = `atleta_id.eq.${S.atleta.id}` + (gids.length ? `,grupo_id.in.(${gids.join(',')})` : '');
+  const { data, error } = await sb.from('treinos').select('*, blocos(*)').or(filtro).eq('publicado', true).gte('data', ini).lte('data', fim).order('data');
   if (error) throw error;
   const porDia = {};
   for (const t of data) (porDia[t.data] ||= []).push(t);
@@ -210,6 +251,7 @@ async function vHoje(m){
       <input placeholder="Comentário (opcional)" data-c="${b.id}" value="${esc(r?.comentario||'')}" style="margin-top:6px"></div></div>`; }).join('')}
   </div>`).join('');
   $('#dia').querySelectorAll('[data-s]').forEach(btn => btn.onclick = async () => {
+    if (S.preview) return toast('Modo visualização: o atleta salva o resultado aqui');
     const id = +btn.dataset.s;
     const resultado = $(`[data-r="${id}"]`).value.trim(), comentario = $(`[data-c="${id}"]`).value.trim();
     btn.disabled = true;
@@ -274,35 +316,56 @@ async function carregaBase(){
   CACHE = { grupos:g.data, atletas:a.data, vinc:v.data };
 }
 
+const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const DIASC = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+const domingo = s => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() - d.getDay()); return iso(d); };
 async function vCal(m){
   m.innerHTML = '<p class="mut">Carregando…</p>';
   try { await carregaBase(); } catch(e){ return erro(e); }
   if (!S.alvo && CACHE.grupos[0]) S.alvo = 'g:' + CACHE.grupos[0].id;
+  S.modo = S.modo || 'mes';
+  S.ref = S.ref || hoje();
   const opts = `<optgroup label="Grupos">${CACHE.grupos.map(g=>`<option value="g:${g.id}" ${S.alvo==='g:'+g.id?'selected':''}>${esc(g.nome)}</option>`).join('')}</optgroup><optgroup label="Individual">${CACHE.atletas.filter(a=>a.ativo).map(a=>`<option value="a:${a.id}" ${S.alvo==='a:'+a.id?'selected':''}>${esc(a.nome)}</option>`).join('')}</optgroup>`;
-  const ini = S.semana, fim = addDias(ini,6);
-  m.innerHTML = `<div class="row" style="margin-bottom:10px"><select id="alvo" style="flex:1;min-width:180px">${opts}</select></div>
-  <div class="row" style="margin-bottom:12px"><button class="btn sec sm" id="ant">‹</button><div class="sp" style="text-align:center">${fmt(ini)} – ${fmt(fim)}</div><button class="btn sec sm" id="prx">›</button><button class="btn sec sm" id="hj">Hoje</button><button class="btn sec sm" id="cp">Copiar semana…</button></div>
-  <div class="cal" id="cal"></div>`;
-  if (!CACHE.grupos.length) { $('#cal').outerHTML = '<div class="card"><p class="mut">Crie um grupo na aba Atletas para começar.</p></div>'; }
+  const ref = new Date(S.ref + 'T12:00:00');
+  let ini, fim, rotulo;
+  if (S.modo === 'mes') { const p = iso(new Date(ref.getFullYear(), ref.getMonth(), 1, 12)); const u = iso(new Date(ref.getFullYear(), ref.getMonth()+1, 0, 12)); ini = domingo(p); fim = addDias(domingo(u), 6); rotulo = `${MESES[ref.getMonth()]} ${ref.getFullYear()}`; }
+  else { ini = domingo(S.ref); fim = addDias(ini, 6); rotulo = `${fmt(ini).slice(4)} – ${fmt(fim).slice(4)}`; }
+  const nomeAlvo = S.alvo ? (S.alvo[0]==='g' ? CACHE.grupos.find(g=>'g:'+g.id===S.alvo)?.nome : CACHE.atletas.find(a=>'a:'+a.id===S.alvo)?.nome) || '' : '';
+  const sig = nomeAlvo.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase();
+  m.innerHTML = `<div class="chead"><div class="av">${esc(sig||'N')}</div><select id="alvo">${opts}</select>
+    <div class="mnav"><button id="ant">‹</button><b>${esc(rotulo)}</b><button id="prx">›</button></div></div>
+  <div class="row" style="margin-bottom:10px"><div class="seg sm"><button data-md="semana" class="${S.modo==='semana'?'on':''}">SEMANA</button><button data-md="mes" class="${S.modo==='mes'?'on':''}">MÊS</button></div><div class="sp"></div><button class="btn sec sm" id="hj">Hoje</button><button class="btn sec sm" id="cp">Copiar semana…</button></div>
+  <div id="cal"><p class="mut">Carregando treinos…</p></div>`;
+  if (!CACHE.grupos.length) { $('#cal').innerHTML = '<div class="card"><p class="mut">Crie um grupo na aba Atletas para começar.</p></div>'; }
   $('#alvo').onchange = e => { S.alvo = e.target.value; vCal(m); };
-  $('#ant').onclick = () => { S.semana = addDias(S.semana,-7); vCal(m); };
-  $('#prx').onclick = () => { S.semana = addDias(S.semana,7); vCal(m); };
-  $('#hj').onclick = () => { S.semana = segunda(hoje()); vCal(m); };
-  $('#cp').onclick = () => copiarSemana(m);
+  const passo = (n) => { const d = new Date(S.ref + 'T12:00:00'); if (S.modo==='mes') { d.setDate(1); d.setMonth(d.getMonth()+n); } else d.setDate(d.getDate()+7*n); S.ref = iso(d); vCal(m); };
+  $('#ant').onclick = () => passo(-1); $('#prx').onclick = () => passo(1);
+  $('#hj').onclick = () => { S.ref = hoje(); vCal(m); };
+  m.querySelectorAll('[data-md]').forEach(b => b.onclick = () => { S.modo = b.dataset.md; vCal(m); });
+  $('#cp').onclick = () => { S.semana = domingo(S.ref); copiarSemana(m); };
   if (!S.alvo) return;
   const [tipo, id] = S.alvo.split(':');
   const q = sb.from('treinos').select('*, blocos(id,titulo,ordem)').gte('data',ini).lte('data',fim).order('id');
   const { data, error } = await (tipo==='g' ? q.eq('grupo_id', id) : q.eq('atleta_id', id));
   if (error) return erro(error);
   let grupoDoAtleta = [];
-  if (tipo==='a') { const gids = CACHE.vinc.filter(v=>v.atleta_id===id).map(v=>v.grupo_id); if (gids.length) { const r = await sb.from('treinos').select('id,data,titulo,grupo_id').in('grupo_id',gids).gte('data',ini).lte('data',fim); grupoDoAtleta = r.data||[]; } }
+  if (tipo==='a') { const gids = CACHE.vinc.filter(v=>v.atleta_id===id).map(v=>v.grupo_id); if (gids.length) { const r = await sb.from('treinos').select('id,data,titulo,grupo_id,blocos(titulo,ordem)').in('grupo_id',gids).gte('data',ini).lte('data',fim); grupoDoAtleta = r.data||[]; } }
   const cal = $('#cal'); if (!cal) return;
-  cal.innerHTML = [...Array(7)].map((_,i)=>{ const d=addDias(ini,i); const ts=data.filter(t=>t.data===d); const gs=grupoDoAtleta.filter(t=>t.data===d);
-    return `<div class="c"><div class="h"><span>${fmt(d)}</span><button class="mut" data-novo="${d}" title="Novo treino">＋</button></div>
-    ${ts.map(t=>`<button class="t ${tipo==='a'?'ind':''}" data-t="${t.id}"><b>${esc(t.titulo||'Treino')}</b>${t.substitui_grupo?' <span class="pill">substitui grupo</span>':''}<div class="mut small">${t.blocos.sort((a,b)=>a.ordem-b.ordem).map(b=>esc(b.titulo)).join(' · ')}</div></button>`).join('')}
-    ${gs.map(t=>`<div class="mut small" style="margin-bottom:4px">Grupo: ${esc(CACHE.grupos.find(g=>g.id===t.grupo_id)?.nome)} – ${esc(t.titulo)} <button class="btn sec sm" data-ind="${t.id}">Ajustar p/ atleta</button></div>`).join('')}
-    </div>`; }).join('');
-  cal.querySelectorAll('[data-novo]').forEach(b => b.onclick = () => editor({ data:b.dataset.novo, titulo:'', blocos:[{titulo:'',descricao:'',comentario:''}], [tipo==='g'?'grupo_id':'atleta_id']: tipo==='g'?+id:id }, m));
+  const mesRef = ref.getMonth(), hj = hoje();
+  const nDias = Math.round((new Date(fim) - new Date(ini)) / 864e5) + 1;
+  let html = DIASC.map(d=>`<div class="wd">${d}</div>`).join('');
+  for (let w = 0; w < nDias; w += 7) {
+    const dias = [...Array(7)].map((_,i)=>addDias(ini, w+i));
+    html += dias.map(d => { const dt = new Date(d+'T12:00:00'); const fora = S.modo==='mes' && dt.getMonth()!==mesRef; return `<div class="dn ${fora?'fora':''} ${d===hj?'hj':''}"><span>${String(dt.getDate()).padStart(2,'0')}</span><button data-novo="${d}" title="Novo treino">＋</button></div>`; }).join('');
+    html += dias.map(d => { const dt = new Date(d+'T12:00:00'); const fora = S.modo==='mes' && dt.getMonth()!==mesRef;
+      const ts = data.filter(t=>t.data===d), gs = grupoDoAtleta.filter(t=>t.data===d);
+      return `<div class="cell ${fora?'fora':''}" data-vazio="${d}">${ts.map(t=>`<button class="tc ${tipo==='a'?'ind':''}" data-t="${t.id}"><div class="tt">${esc(t.titulo||'Treino')}</div><div class="bl">${t.blocos.sort((a,b)=>a.ordem-b.ordem).map(b=>esc(b.titulo)).join('<br>')}</div><span class="mais">•••</span></button>`).join('')}
+        ${gs.map(t=>`<button class="tc grp" data-ind="${t.id}" title="Treino do grupo – toque para ajustar só para este atleta"><div class="tt">${esc(CACHE.grupos.find(g=>g.id===t.grupo_id)?.nome||'Grupo')}</div><div class="bl">${(t.blocos||[]).sort((a,b)=>a.ordem-b.ordem).map(b=>esc(b.titulo)).join('<br>')}</div></button>`).join('')}</div>`; }).join('');
+  }
+  cal.innerHTML = `<div class="mcal ${S.modo==='semana'?'sem':''}">${html}</div><p class="mut small" style="margin-top:8px">Toque num treino para editar. Use ＋ na faixa do dia para criar.${tipo==='a'?' Cards tracejados são do grupo: toque para ajustar só para este atleta.':''}</p>`;
+  const novo = d => editor({ data:d, titulo:'', blocos:[{titulo:'',descricao:'',comentario:''}], [tipo==='g'?'grupo_id':'atleta_id']: tipo==='g'?+id:id }, m);
+  cal.querySelectorAll('[data-novo]').forEach(b => b.onclick = e => { e.stopPropagation(); novo(b.dataset.novo); });
+  cal.querySelectorAll('.cell').forEach(c => c.onclick = e => { if (e.target === c && !c.querySelector('.tc')) novo(c.dataset.vazio); });
   cal.querySelectorAll('[data-t]').forEach(b => b.onclick = async () => { const { data:t, error } = await sb.from('treinos').select('*, blocos(*)').eq('id', b.dataset.t).single(); if (error) return erro(error); t.blocos.sort((a,b)=>a.ordem-b.ordem); editor(t, m); });
   cal.querySelectorAll('[data-ind]').forEach(b => b.onclick = async () => { const { data:t } = await sb.from('treinos').select('*, blocos(*)').eq('id', b.dataset.ind).single(); t.blocos.sort((a,b)=>a.ordem-b.ordem);
     editor({ data:t.data, titulo:t.titulo, atleta_id:id, substitui_grupo:true, blocos:t.blocos.map(({titulo,descricao,comentario,video_url})=>({titulo,descricao,comentario,video_url})) }, m); });
@@ -360,13 +423,13 @@ async function resultados(t){
 
 async function copiarSemana(m){
   if (!S.alvo) return;
-  const de = prompt('Copiar a semana que começa em (segunda, AAAA-MM-DD):', addDias(S.semana,-7)); if (!de) return;
-  const para = prompt('Para a semana que começa em (segunda, AAAA-MM-DD):', S.semana); if (!para) return;
-  const [tipo,id] = S.alvo.split(':'); const q = sb.from('treinos').select('*, blocos(*)').gte('data', segunda(de)).lte('data', addDias(segunda(de),6));
+  const de = prompt('Copiar a semana que começa em (domingo, AAAA-MM-DD):', addDias(S.semana,-7)); if (!de) return;
+  const para = prompt('Para a semana que começa em (domingo, AAAA-MM-DD):', S.semana); if (!para) return;
+  const [tipo,id] = S.alvo.split(':'); const q = sb.from('treinos').select('*, blocos(*)').gte('data', domingo(de)).lte('data', addDias(domingo(de),6));
   const { data, error } = await (tipo==='g' ? q.eq('grupo_id', id) : q.eq('atleta_id', id)); if (error) return erro(error);
   if (!data.length) return toast('Nada para copiar nessa semana');
-  const delta = Math.round((new Date(segunda(para)) - new Date(segunda(de))) / 864e5);
-  try { for (const t of data) { t.blocos.sort((a,b)=>a.ordem-b.ordem); await salvarTreino({ ...t, id:null, data:addDias(t.data, delta) }); } toast(`${data.length} treino(s) copiados`); S.semana = segunda(para); vCal(m); } catch(e){ erro(e); }
+  const delta = Math.round((new Date(domingo(para)) - new Date(domingo(de))) / 864e5);
+  try { for (const t of data) { t.blocos.sort((a,b)=>a.ordem-b.ordem); await salvarTreino({ ...t, id:null, data:addDias(t.data, delta) }); } toast(`${data.length} treino(s) copiados`); S.ref = domingo(para); S.modo = 'semana'; vCal(m); } catch(e){ erro(e); }
 }
 
 // ---------- COACH: GRUPOS E ATLETAS ----------
@@ -381,8 +444,9 @@ async function vGrupos(m){
     <label>Grupos</label><div class="row">${CACHE.grupos.map(g=>`<label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin:0"><input type="checkbox" class="ag" value="${g.id}" style="width:auto;margin-right:4px">${esc(g.nome)}</label>`).join('')}</div>
     <button class="btn" id="ca" style="margin-top:12px">Cadastrar atleta</button></div>`;
   const drawA = q => { const f = CACHE.atletas.filter(a => !q || a.nome.toLowerCase().includes(q.toLowerCase()));
-    $('#la').innerHTML = f.map(a => `<div class="it"><div style="flex:1"><b style="${a.ativo?'':'opacity:.5'}">${esc(a.nome)}</b><div class="mut small">${esc(a.email||'sem e-mail')} · ${a.user_id?'<span class="ok">conta ativa</span>':'sem conta ainda'} · ${CACHE.vinc.filter(v=>v.atleta_id===a.id).map(v=>esc(CACHE.grupos.find(g=>g.id===v.grupo_id)?.nome)).join(', ')||'sem grupo'}</div></div><button class="btn sec sm" data-ea="${a.id}">Editar</button></div>`).join('') || '<p class="mut">Nenhum atleta.</p>';
-    $('#la').querySelectorAll('[data-ea]').forEach(b => b.onclick = () => editarAtleta(CACHE.atletas.find(a=>a.id===b.dataset.ea), m)); };
+    $('#la').innerHTML = f.map(a => `<div class="it"><div style="flex:1"><b style="${a.ativo?'':'opacity:.5'}">${esc(a.nome)}</b><div class="mut small">${esc(a.email||'sem e-mail')} · ${a.user_id?'<span class="ok">conta ativa</span>':'sem conta ainda'} · ${CACHE.vinc.filter(v=>v.atleta_id===a.id).map(v=>esc(CACHE.grupos.find(g=>g.id===v.grupo_id)?.nome)).join(', ')||'sem grupo'}</div></div><button class="btn sec sm" data-pv="${a.id}" title="Ver como atleta">👁</button><button class="btn sec sm" data-ea="${a.id}">Editar</button></div>`).join('') || '<p class="mut">Nenhum atleta.</p>';
+    $('#la').querySelectorAll('[data-ea]').forEach(b => b.onclick = () => editarAtleta(CACHE.atletas.find(a=>a.id===b.dataset.ea), m));
+    $('#la').querySelectorAll('[data-pv]').forEach(b => b.onclick = () => { S.preview = true; S.atleta = CACHE.atletas.find(a=>a.id===b.dataset.pv); S.tab = 'hoje'; S.dia = hoje(); S.semana = segunda(hoje()); render(); }); };
   drawA(''); $('#ba').oninput = e => drawA(e.target.value);
   $('#cg').onclick = async () => { const nome = $('#ng').value.trim(); if (!nome) return; const { error } = await sb.from('grupos').insert({ nome }); if (error) return erro(error); vGrupos(m); };
   m.querySelectorAll('[data-rg]').forEach(b => b.onclick = async () => { const g = CACHE.grupos.find(x=>x.id===+b.dataset.rg); const nome = prompt('Novo nome do grupo', g.nome); if (!nome) return; const { error } = await sb.from('grupos').update({ nome }).eq('id', g.id); if (error) return erro(error); vGrupos(m); });
@@ -401,10 +465,11 @@ function editarAtleta(a, m){
     ${a.user_id?'<p class="mut small" style="margin-top:4px">Conta já criada – o e-mail não pode mais ser trocado aqui.</p>':''}
     <label>Grupos</label><div class="row">${CACHE.grupos.map(g=>`<label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin:0"><input type="checkbox" class="g" value="${g.id}" ${meus.includes(g.id)?'checked':''} style="width:auto;margin-right:4px">${esc(g.nome)}</label>`).join('')}</div>
     <label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin-top:14px"><input type="checkbox" id="at" ${a.ativo?'checked':''} style="width:auto;margin-right:8px">Ativo</label>
-    <div class="row" style="margin-top:16px"><button class="btn" id="s" style="flex:1">Salvar</button><button class="btn sec" id="ind">Treinos individuais</button></div></div>`;
+    <div class="row" style="margin-top:16px"><button class="btn" id="s" style="flex:1">Salvar</button><button class="btn sec" id="ind">Treinos individuais</button><button class="btn sec" id="prev">Ver como atleta</button></div></div>`;
   document.body.appendChild(md);
   md.querySelector('#x').onclick = () => md.remove();
   md.querySelector('#ind').onclick = () => { md.remove(); S.alvo = 'a:' + a.id; S.tab = 'cal'; render(); };
+  md.querySelector('#prev').onclick = () => { md.remove(); S.preview = true; S.atleta = a; S.tab = 'hoje'; S.dia = hoje(); S.semana = segunda(hoje()); render(); };
   md.querySelector('#s').onclick = async () => {
     const upd = { nome: md.querySelector('#n').value.trim(), ativo: md.querySelector('#at').checked }; if (!a.user_id) upd.email = md.querySelector('#e').value.trim().toLowerCase() || null;
     const { error } = await sb.from('atletas').update(upd).eq('id', a.id); if (error) return erro(error);

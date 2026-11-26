@@ -127,6 +127,16 @@ header.top .brand .logo{font-size:18px}
 @media(max-width:560px){.tc .tt{font-size:10px}.tc .bl{font-size:10px}.mcal .dn{font-size:13px;padding:4px 5px}.mcal .dn button{display:none}.tc .mais{display:none}}
 .banner{background:var(--acc);color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
 .banner button{background:#fff;color:#0A0A0F;border-radius:8px;padding:4px 10px;font-weight:700}
+.thead{padding:2px 2px 14px}
+.thead h2{margin:2px 0 4px;line-height:1.3}
+.ativ{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:16px;overflow:hidden}
+.ativ .ah{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--card2);border-bottom:1px solid var(--line)}
+.ativ .num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+.ativ.feita .num{background:var(--ok)}
+.ativ h4{flex:1;font-size:15px;font-weight:800;line-height:1.3;color:var(--txt);margin:0}
+.ativ .ad{padding:14px 14px 6px}
+.ativ .ac{padding:4px 14px 0}
+.ativ .res{margin:12px 14px 14px}
 .tema{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--mut);margin-right:4px}
 .tema svg{width:20px;height:20px}
 html[data-tema="claro"]{--bg:#F6F5FA;--card:#FFFFFF;--card2:#F1EDFB;--line:#E4DEF2;--txt:#16121F;--mut:#6B6480;--acc:#7B2FF7;--acc2:#6D28D9;--ok:#16A34A;--err:#DC2626}
@@ -151,6 +161,8 @@ html[data-tema="claro"] .btn.dan{border-color:#F3C4C4}
 html[data-tema="claro"] input,html[data-tema="claro"] textarea{background:#FFFFFF}
 html[data-tema="claro"] .res input{background:#FFFFFF}
 html[data-tema="claro"] .res{background:#F6F3FD}
+html[data-tema="claro"] .ativ{box-shadow:0 2px 8px rgba(30,15,60,.07)}
+html[data-tema="claro"] .ativ .ah{background:#F1EBFE}
 </style>
 <script>(function(){var t=null;try{t=localStorage.getItem('tema');}catch(e){}if(t!=='escuro'){document.documentElement.dataset.tema='claro';document.querySelector('meta[name=theme-color]').content='#FFFFFF';document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]').content='default';}})();</script>
 </head>
@@ -314,13 +326,13 @@ async function vTreino(m){
   const ids = ts.flatMap(t => t.blocos.map(b => b.id));
   const { data:res } = ids.length ? await sb.from('resultados').select('*').in('bloco_id', ids).eq('atleta_id', S.atleta.id) : { data:[] };
   const rm = Object.fromEntries((res||[]).map(r => [r.bloco_id, r]));
-  $('#dia').innerHTML = ts.map(t => `<div class="card"><div class="mut small" style="margin-bottom:4px">${fmt(t.data)}</div><h2 style="margin-top:0">${esc(t.titulo || fmt(t.data))}</h2>
-    ${t.blocos.map(b => { const r = rm[b.id]; return `<div class="bloco"><h4>${esc(b.titulo)}</h4><div class="pre">${esc(b.descricao)}</div>
-      ${b.comentario?`<div class="pre mut small" style="margin-top:6px">${esc(b.comentario)}</div>`:''}
-      ${b.video_url?`<a class="small" style="color:var(--acc2)" href="${esc(b.video_url)}" target="_blank" rel="noopener">▶ Ver vídeo</a>`:''}
+  $('#dia').innerHTML = ts.map(t => `<div class="thead"><div class="mut small">${fmt(t.data)}</div><h2>${esc(t.titulo || fmt(t.data))}</h2><div class="mut small">${t.blocos.length} ${t.blocos.length===1?'atividade':'atividades'}</div></div>
+    ${t.blocos.map((b,i) => { const r = rm[b.id]; return `<div class="ativ ${r?'feita':''}" id="at${b.id}"><div class="ah"><span class="num">${i+1}</span><h4>${esc(b.titulo)}</h4></div>
+      <div class="pre ad">${esc(b.descricao)}</div>
+      ${b.comentario?`<div class="pre mut small ac">${esc(b.comentario)}</div>`:''}
+      ${b.video_url?`<div class="ac"><a class="small" style="color:var(--acc2)" href="${esc(b.video_url)}" target="_blank" rel="noopener">▶ Ver vídeo</a></div>`:''}
       <div class="res"><div class="row"><input placeholder="Carga, tempo ou reps" data-r="${b.id}" value="${esc(r?.resultado||'')}" style="flex:1"><button class="btn sm" data-s="${b.id}">${r?'✓':'Salvar'}</button></div>
-      <input placeholder="Comentário (opcional)" data-c="${b.id}" value="${esc(r?.comentario||'')}" style="margin-top:6px"></div></div>`; }).join('')}
-  </div>`).join('');
+      <input placeholder="Comentário (opcional)" data-c="${b.id}" value="${esc(r?.comentario||'')}" style="margin-top:6px"></div></div>`; }).join('')}`).join('');
   $('#dia').querySelectorAll('[data-s]').forEach(btn => btn.onclick = async () => {
     if (S.preview) return toast('Modo visualização: o atleta salva o resultado aqui');
     const id = +btn.dataset.s;
@@ -329,7 +341,7 @@ async function vTreino(m){
     const { error } = await sb.from('resultados').upsert({ bloco_id:id, atleta_id:S.atleta.id, resultado, comentario, concluido:true, atualizado_em:new Date().toISOString() }, { onConflict:'bloco_id,atleta_id' });
     btn.disabled = false;
     if (error) return erro(error);
-    btn.textContent = '✓'; toast('Resultado salvo');
+    btn.textContent = '✓'; toast('Resultado salvo'); const at = $('#at' + id); if (at) at.classList.add('feita');
   });
 }
 

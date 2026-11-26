@@ -152,7 +152,7 @@ html[data-tema="claro"] input,html[data-tema="claro"] textarea{background:#FFFFF
 html[data-tema="claro"] .res input{background:#FFFFFF}
 html[data-tema="claro"] .res{background:#F6F3FD}
 </style>
-<script>try{var t=localStorage.getItem('tema');if(t)document.documentElement.dataset.tema=t;if(t==='claro')document.querySelector('meta[name=theme-color]').content='#FFFFFF';}catch(e){}</script>
+<script>(function(){var t=null;try{t=localStorage.getItem('tema');}catch(e){}if(t!=='escuro'){document.documentElement.dataset.tema='claro';document.querySelector('meta[name=theme-color]').content='#FFFFFF';document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]').content='default';}})();</script>
 </head>
 <body>
 <div id="app"></div>
@@ -248,7 +248,7 @@ function render(){
   <main class="wrap ${S.tab==='cal'?'wide':''}" id="main"></main>
   <nav class="tabs">${tabs.map(([k,n])=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${ICON[k==='grupos'?'grupos':k]}<span>${n}</span></button>`).join('')}</nav>`;
   $('#sair').onclick = () => { if (confirm('Sair da conta?')) sb.auth.signOut(); };
-  $('#tema').onclick = () => { const claro = document.documentElement.dataset.tema !== 'claro'; if (claro) document.documentElement.dataset.tema = 'claro'; else delete document.documentElement.dataset.tema; try { localStorage.setItem('tema', claro ? 'claro' : ''); } catch {} const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = claro ? '#FFFFFF' : '#0A0A0F'; $('#tema').innerHTML = claro ? ICON.lua : ICON.sol; };
+  $('#tema').onclick = () => { const claro = document.documentElement.dataset.tema !== 'claro'; if (claro) document.documentElement.dataset.tema = 'claro'; else delete document.documentElement.dataset.tema; try { localStorage.setItem('tema', claro ? 'claro' : 'escuro'); } catch {} const mt = document.querySelector('meta[name=theme-color]'); if (mt) mt.content = claro ? '#FFFFFF' : '#0A0A0F'; const ms = document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]'); if (ms) ms.content = claro ? 'default' : 'black-translucent'; $('#tema').innerHTML = claro ? ICON.lua : ICON.sol; };
   const sp = $('#sairprev'); if (sp) sp.onclick = () => { S.preview = false; S.atleta = null; S.treinoAberto = null; S.tab = 'grupos'; render(); };
   app.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { S.tab = b.dataset.t; S.treinoAberto = null; render(); });
   const m = $('#main');

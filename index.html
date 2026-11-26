@@ -371,7 +371,7 @@ async function vHist(m){
 }
 
 // ---------- CRONÔMETRO ----------
-const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ timer:600, trab:40, desc:20, rounds:8, emom:60, emomR:10, prep:10 } };
+const CR = { modo:'timer', rod:false, ini:0, acum:0, iv:null, cfg:{ timer:600, dir:'desc', trab:40, desc:20, rounds:8, emom:60, emomR:10, prep:10 } };
 const campoTempo = (k, rot) => `<div class="tcampo"><label>${rot}</label><div class="mmss"><input type="number" inputmode="numeric" min="0" id="m_${k}" value="${Math.floor(CR.cfg[k]/60)}"><span>min</span><input type="number" inputmode="numeric" min="0" max="59" id="s_${k}" value="${CR.cfg[k]%60}"><span>s</span></div></div>`;
 const campoNum = (k, rot) => `<div class="tcampo"><label>${rot}</label><input type="number" inputmode="numeric" min="1" id="n_${k}" value="${CR.cfg[k]}"></div>`;
 let wake = null;
@@ -381,9 +381,9 @@ function bip(f=880, d=.15){ try { const c = bip.c ||= new (window.AudioContext||
 const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; };
 function vCrono(m){
   const c = CR.cfg;
-  m.innerHTML = `<div class="seg">${[['cron','Cronômetro'],['timer','Timer'],['tabata','Intervalo'],['emom','EMOM']].map(([k,n])=>`<button data-k="${k}" class="${CR.modo===k?'on':''}">${n}</button>`).join('')}</div>
+  m.innerHTML = `<div class="seg">${[['timer','Timer'],['tabata','Intervalo'],['emom','EMOM']].map(([k,n])=>`<button data-k="${k}" class="${CR.modo===k?'on':''}">${n}</button>`).join('')}</div>
   <div class="card" id="crono">
-    <div id="cfg">${CR.modo==='timer'?campoTempo('timer','Tempo'):''}
+    <div id="cfg">${CR.modo==='timer'?`<div class="tcampo" style="flex-basis:100%"><label>Contagem</label><div class="pseg">${[['desc','Decrescente ↓'],['asc','Crescente ↑']].map(([v,n])=>`<button data-d="${v}" class="${c.dir===v?'on':''}">${n}</button>`).join('')}</div></div>`+campoTempo('timer', c.dir==='asc'?'Time cap (0 = sem limite)':'Tempo'):''}
     ${CR.modo==='tabata'?campoTempo('trab','Trabalho')+campoTempo('desc','Descanso')+campoNum('rounds','Rounds'):''}
     ${CR.modo==='emom'?campoTempo('emom','A cada')+campoNum('emomR','Rounds'):''}
     <div class="tcampo" style="flex-basis:100%"><label>Contagem antes de começar</label><div class="pseg">${[[0,'Sem'],[5,'5 s'],[10,'10 s'],[15,'15 s']].map(([v,n])=>`<button data-p="${v}" class="${c.prep===v?'on':''}">${n}</button>`).join('')}</div></div></div>
@@ -395,11 +395,12 @@ function vCrono(m){
   m.querySelectorAll('#cfg input').forEach(i => i.oninput = () => {
     const k = i.id.slice(2);
     if (i.id[0] === 'n') c[k] = Math.max(1, Math.floor(+i.value || 1));
-    else { const mi = Math.max(0, Math.floor(+$('#m_'+k).value || 0)), se = Math.max(0, Math.floor(+$('#s_'+k).value || 0)); c[k] = Math.max(1, mi*60 + se); }
+    else { const mi = Math.max(0, Math.floor(+$('#m_'+k).value || 0)), se = Math.max(0, Math.floor(+$('#s_'+k).value || 0)); c[k] = Math.max(k==='timer' && c.dir==='asc' ? 0 : 1, mi*60 + se); }
     if (!CR.rod && !CR.acum) tick();
   });
   m.querySelectorAll('#cfg input[id^="s_"]').forEach(i => i.onchange = () => { const k = i.id.slice(2); $('#m_'+k).value = Math.floor(c[k]/60); i.value = c[k]%60; });
-  m.querySelectorAll('.pseg button').forEach(b => b.onclick = () => { c.prep = +b.dataset.p; m.querySelectorAll('.pseg button').forEach(x => x.classList.toggle('on', x === b)); });
+  m.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { c.prep = +b.dataset.p; m.querySelectorAll('[data-p]').forEach(x => x.classList.toggle('on', x === b)); });
+  m.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { c.dir = b.dataset.d; if (c.dir === 'desc' && c.timer < 1) c.timer = 600; parar(); CR.acum = 0; vCrono(m); });
   $('#play').onclick = () => { if (CR.rod) { CR.acum += (Date.now()-CR.ini)/1000; parar(); } else { if (CR.acum === 0 && c.prep > 0) { CR.acum = -c.prep; CR.ultPrep = null; } CR.rod=true; CR.ini=Date.now(); pedeWake(); CR.iv=setInterval(tick,200); bip(660); } $('#play').textContent = CR.rod?'Pausar':'Iniciar'; };
   $('#zerar').onclick = () => { parar(); CR.acum=0; CR.ult=null; tick(); $('#play').textContent='Iniciar'; };
   tick();
@@ -411,7 +412,7 @@ function tick(){
   const prep = t < 0;
   if (CR.ultPrep != null && !prep) { if (CR.rod) bip(990,.45); CR.ultPrep = null; }
   if (prep) { const s = Math.ceil(-t); txt = String(s); fase = 'Prepare-se'; if (CR.ultPrep !== s) { if (CR.rod && s <= 3) bip(660); CR.ultPrep = s; } }
-  else if (CR.modo==='cron') txt = mmss(Math.floor(t));
+  else if (CR.modo==='timer' && c.dir==='asc') { const cap = c.timer > 0 && t >= c.timer; txt = mmss(Math.floor(cap ? c.timer : t)); if (cap && CR.rod){ CR.acum=c.timer; parar(); bip(440,.6); } if (cap && CR.acum) fase='Fim!'; }
   else if (CR.modo==='timer') { const r = c.timer - t; txt = mmss(r); if (r<=0 && CR.rod){ CR.acum=t; parar(); bip(440,.6); } if (r<=0 && CR.acum) fase='Fim!'; }
   else if (CR.modo==='tabata') { const ciclo=c.trab+c.desc, n=Math.floor(t/ciclo); if (n>=c.rounds){ txt='00:00'; fase='Fim!'; if(CR.rod){CR.acum=t;parar();bip(440,.6);} } else { const p=t%ciclo, tr=p<c.trab; txt=mmss(tr?c.trab-p:ciclo-p); fase=`Round ${n+1}/${c.rounds} · ${tr?'TRABALHO':'descanso'}`; const k=n+'-'+tr; if(CR.ult!==k){ if(CR.rod&&CR.ult) bip(tr?880:520); CR.ult=k; } } }
   else { const n=Math.floor(t/c.emom); if (n>=c.emomR){ txt='00:00'; fase='Fim!'; if(CR.rod){CR.acum=t;parar();bip(440,.6);} } else { txt=mmss(c.emom - t%c.emom); fase=`Minuto ${n+1}/${c.emomR}`; if(CR.ult!==n){ if(CR.rod&&CR.ult!=null) bip(880); CR.ult=n; } } }

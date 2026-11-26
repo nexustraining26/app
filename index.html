@@ -86,6 +86,16 @@ nav.tabs svg{width:22px;height:22px}
 .blk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin:10px 0}
 .timer{font-variant-numeric:tabular-nums;font-size:64px;font-weight:800;text-align:center;letter-spacing:.02em;margin:18px 0}
 .timer.go{color:var(--acc2)}
+#cfg{display:flex;flex-wrap:wrap;gap:10px}
+.tcampo{flex:1 1 140px}
+.mmss{display:flex;align-items:center;gap:6px}
+.mmss input{width:0;flex:1;text-align:center;font-size:18px;font-weight:700}
+.mmss span{font-size:13px;color:var(--mut)}
+#crono.ativo{min-height:calc(100vh - 210px);display:flex;flex-direction:column;justify-content:center}
+#crono.ativo #cfg{display:none}
+#crono.ativo .timer{font-size:clamp(96px,27vw,240px);line-height:1;margin:28px 0 36px}
+#crono.ativo #fase{font-size:18px;font-weight:800;color:var(--acc);margin-top:0}
+#crono.ativo .btn{padding:14px 22px;font-size:17px}
 .seg{display:flex;background:var(--card2);border-radius:10px;padding:3px;margin-bottom:10px}
 .seg button{flex:1;padding:8px;border-radius:8px;color:var(--mut)}
 .seg button.on{background:var(--acc);color:#fff;font-weight:600}
@@ -357,7 +367,9 @@ async function vHist(m){
 }
 
 // ---------- CRONÔMETRO ----------
-const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ min:10, trab:40, desc:20, rounds:8, emom:60, emomR:10 } };
+const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ timer:600, trab:40, desc:20, rounds:8, emom:60, emomR:10 } };
+const campoTempo = (k, rot) => `<div class="tcampo"><label>${rot}</label><div class="mmss"><input type="number" inputmode="numeric" min="0" id="m_${k}" value="${Math.floor(CR.cfg[k]/60)}"><span>min</span><input type="number" inputmode="numeric" min="0" max="59" id="s_${k}" value="${CR.cfg[k]%60}"><span>s</span></div></div>`;
+const campoNum = (k, rot) => `<div class="tcampo"><label>${rot}</label><input type="number" inputmode="numeric" min="1" id="n_${k}" value="${CR.cfg[k]}"></div>`;
 let wake = null;
 async function pedeWake(){ try { wake = await navigator.wakeLock?.request('screen'); } catch{} }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && CR.rod && (!wake || wake.released)) pedeWake(); });
@@ -366,16 +378,22 @@ const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s
 function vCrono(m){
   const c = CR.cfg;
   m.innerHTML = `<div class="seg">${[['cron','Cronômetro'],['timer','Timer'],['tabata','Intervalo'],['emom','EMOM']].map(([k,n])=>`<button data-k="${k}" class="${CR.modo===k?'on':''}">${n}</button>`).join('')}</div>
-  <div class="card">
-    <div id="cfg" class="row">${CR.modo==='timer'?`<div style="flex:1"><label>Minutos</label><input type="number" id="c_min" value="${c.min}"></div>`:''}
-    ${CR.modo==='tabata'?`<div style="flex:1"><label>Trabalho (s)</label><input type="number" id="c_trab" value="${c.trab}"></div><div style="flex:1"><label>Descanso (s)</label><input type="number" id="c_desc" value="${c.desc}"></div><div style="flex:1"><label>Rounds</label><input type="number" id="c_rounds" value="${c.rounds}"></div>`:''}
-    ${CR.modo==='emom'?`<div style="flex:1"><label>A cada (s)</label><input type="number" id="c_emom" value="${c.emom}"></div><div style="flex:1"><label>Rounds</label><input type="number" id="c_emomR" value="${c.emomR}"></div>`:''}</div>
+  <div class="card" id="crono">
+    <div id="cfg">${CR.modo==='timer'?campoTempo('timer','Tempo'):''}
+    ${CR.modo==='tabata'?campoTempo('trab','Trabalho')+campoTempo('desc','Descanso')+campoNum('rounds','Rounds'):''}
+    ${CR.modo==='emom'?campoTempo('emom','A cada')+campoNum('emomR','Rounds'):''}</div>
     <div class="mut small" id="fase" style="text-align:center;margin-top:10px">&nbsp;</div>
     <div class="timer" id="tm">00:00</div>
     <div class="row" style="justify-content:center"><button class="btn" id="play" style="min-width:120px">${CR.rod?'Pausar':'Iniciar'}</button><button class="btn sec" id="zerar">Zerar</button></div>
   </div><p class="mut small" style="text-align:center">A tela fica acesa enquanto o cronômetro roda.</p>`;
   m.querySelectorAll('.seg button').forEach(b => b.onclick = () => { parar(); CR.acum=0; CR.modo=b.dataset.k; vCrono(m); });
-  m.querySelectorAll('#cfg input').forEach(i => i.onchange = () => { c[i.id.slice(2)] = Math.max(1, +i.value||1); });
+  m.querySelectorAll('#cfg input').forEach(i => i.oninput = () => {
+    const k = i.id.slice(2);
+    if (i.id[0] === 'n') c[k] = Math.max(1, Math.floor(+i.value || 1));
+    else { const mi = Math.max(0, Math.floor(+$('#m_'+k).value || 0)), se = Math.max(0, Math.floor(+$('#s_'+k).value || 0)); c[k] = Math.max(1, mi*60 + se); }
+    if (!CR.rod && !CR.acum) tick();
+  });
+  m.querySelectorAll('#cfg input[id^="s_"]').forEach(i => i.onchange = () => { const k = i.id.slice(2); $('#m_'+k).value = Math.floor(c[k]/60); i.value = c[k]%60; });
   $('#play').onclick = () => { if (CR.rod) { CR.acum += (Date.now()-CR.ini)/1000; parar(); } else { CR.rod=true; CR.ini=Date.now(); pedeWake(); CR.iv=setInterval(tick,200); bip(660); } $('#play').textContent = CR.rod?'Pausar':'Iniciar'; };
   $('#zerar').onclick = () => { parar(); CR.acum=0; CR.ult=null; tick(); $('#play').textContent='Iniciar'; };
   tick();
@@ -385,10 +403,11 @@ function tick(){
   const el = $('#tm'); if (!el) return;
   const t = CR.acum + (CR.rod ? (Date.now()-CR.ini)/1000 : 0), c = CR.cfg; let txt, fase = '';
   if (CR.modo==='cron') txt = mmss(Math.floor(t));
-  else if (CR.modo==='timer') { const r = c.min*60 - t; txt = mmss(r); if (r<=0 && CR.rod){ parar(); bip(440,.6); fase='Fim!'; } }
-  else if (CR.modo==='tabata') { const ciclo=c.trab+c.desc, n=Math.floor(t/ciclo); if (n>=c.rounds){ txt='00:00'; fase='Fim!'; if(CR.rod){parar();bip(440,.6);} } else { const p=t%ciclo, tr=p<c.trab; txt=mmss(tr?c.trab-p:ciclo-p); fase=`Round ${n+1}/${c.rounds} · ${tr?'TRABALHO':'descanso'}`; const k=n+'-'+tr; if(CR.ult!==k){ if(CR.rod&&CR.ult) bip(tr?880:520); CR.ult=k; } } }
-  else { const n=Math.floor(t/c.emom); if (n>=c.emomR){ txt='00:00'; fase='Fim!'; if(CR.rod){parar();bip(440,.6);} } else { txt=mmss(c.emom - t%c.emom); fase=`Minuto ${n+1}/${c.emomR}`; if(CR.ult!==n){ if(CR.rod&&CR.ult!=null) bip(880); CR.ult=n; } } }
+  else if (CR.modo==='timer') { const r = c.timer - t; txt = mmss(r); if (r<=0 && CR.rod){ CR.acum=t; parar(); bip(440,.6); } if (r<=0 && CR.acum) fase='Fim!'; }
+  else if (CR.modo==='tabata') { const ciclo=c.trab+c.desc, n=Math.floor(t/ciclo); if (n>=c.rounds){ txt='00:00'; fase='Fim!'; if(CR.rod){CR.acum=t;parar();bip(440,.6);} } else { const p=t%ciclo, tr=p<c.trab; txt=mmss(tr?c.trab-p:ciclo-p); fase=`Round ${n+1}/${c.rounds} · ${tr?'TRABALHO':'descanso'}`; const k=n+'-'+tr; if(CR.ult!==k){ if(CR.rod&&CR.ult) bip(tr?880:520); CR.ult=k; } } }
+  else { const n=Math.floor(t/c.emom); if (n>=c.emomR){ txt='00:00'; fase='Fim!'; if(CR.rod){CR.acum=t;parar();bip(440,.6);} } else { txt=mmss(c.emom - t%c.emom); fase=`Minuto ${n+1}/${c.emomR}`; if(CR.ult!==n){ if(CR.rod&&CR.ult!=null) bip(880); CR.ult=n; } } }
   el.textContent = txt; el.classList.toggle('go', CR.rod); const f=$('#fase'); if (f) f.innerHTML = fase || '&nbsp;';
+  const cx = $('#crono'); if (cx) cx.classList.toggle('ativo', CR.rod || CR.acum > 0); const sg = $('#main .seg'); if (sg) sg.classList.toggle('hide', CR.rod || CR.acum > 0);
   const pl=$('#play'); if (pl && !CR.rod) pl.textContent='Iniciar';
 }
 

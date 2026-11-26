@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nexus">
-<meta name="versao" content="2026-11-26c">
+<meta name="versao" content="2026-11-26d">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Nexus</title>
@@ -285,6 +285,37 @@ function render(){
   ({ hoje:vHoje, hist:vHist, crono:vCrono, cal:vCal, grupos:vGrupos })[S.tab](m);
 }
 
+// ---------- MINDSET AUTOMÁTICO ----------
+// Frases clássicas (Sêneca, Epicteto, Marco Aurélio, Aristóteles, Heráclito), traduzidas livremente, + uma linha sobre esforço.
+const MINDSETS = [
+  ['Ninguém chegou à sabedoria por acaso.', 'Ficar melhor também não é sorte. É a soma das séries bem feitas, inclusive as de hoje.'],
+  ['Até quando você vai adiar se considerar digno do melhor?', 'Cobre de você o melhor de hoje. Não o mais fácil.'],
+  ['O que impede a ação faz a ação avançar. O que está no caminho se torna o caminho.', 'O esforço que pesa hoje é exatamente o que te leva adiante.'],
+  ['Nada de grande nasce de repente, assim como um cacho de uvas ou um figo.', 'Ficar melhor leva estações. Este treino é parte de uma delas.'],
+  ['Não é porque as coisas são difíceis que não ousamos; é porque não ousamos que elas são difíceis.', 'A parte mais pesada costuma ser a primeira rep. Começa.'],
+  ['Diga primeiro a si mesmo quem você quer ser; depois faça o que tem de ser feito.', 'O atleta que você quer ser treina exatamente como você vai treinar agora.'],
+  ['Todo hábito cresce pelas ações correspondentes: o de andar, andando; o de correr, correndo.', 'Você não fica melhor pensando em treinar. Fica treinando.'],
+  ['Nos tornamos construtores construindo, e tocadores de cítara tocando cítara.', 'Hoje você se torna um pouco mais o atleta que pratica ser.'],
+  ['São as dificuldades que mostram quem somos.', 'Quando ficar duro, repara em quem aparece. É você.'],
+  ['O fogo prova o ouro; a dificuldade, os fortes.', 'Não fuja do desconforto de hoje. É nele que a evolução acontece.'],
+  ['Pare de discutir como deve ser um bom atleta. Seja um.', 'Menos conversa, mais intenção em cada série.'],
+  ['Se algo é difícil para você, não pense que é impossível para um ser humano.', 'Difícil é só o nome que damos ao que ainda não ficou fácil.'],
+  ['Nenhum vento é favorável para quem não sabe aonde vai.', 'Antes de começar, decida o que você quer tirar deste treino.'],
+  ['Sofremos mais na imaginação do que na realidade.', 'O treino de hoje é menor do que parece daqui. Vai e confere.'],
+  ['Não importa o que você suporta, mas como suporta.', 'Cansaço vai ter. A diferença está em como você conduz ele.'],
+  ['A alma se tinge da cor dos seus pensamentos.', 'Entra no treino pensando no que você consegue fazer, não no que falta.'],
+  ['Enquanto adiamos, a vida passa.', 'O melhor momento para fazer bem feito é esta série.'],
+  ['Não é pouco o tempo que temos; é muito o que desperdiçamos.', 'Cada intervalo, cada rep, cada minuto conta. Use todos.'],
+  ['O caráter de um homem é o seu destino.', 'Quem você é no treino difícil é quem você é no dia da prova.'],
+  ['Ao amanhecer, quando custar levantar, lembre: você levanta para fazer o seu trabalho.', 'Hoje o trabalho é este treino. Faça ele inteiro.']
+];
+function mindsetAuto(t){
+  if (!t?.data) return '';
+  const dia = Math.round(new Date(t.data + 'T12:00:00').getTime() / 864e5);
+  const [frase, linha] = MINDSETS[((dia * 7 + (t.grupo_id || 0) * 3) % MINDSETS.length + MINDSETS.length) % MINDSETS.length];
+  return `“${frase}”\n${linha}`;
+}
+
 // ---------- ATLETA ----------
 async function treinosDoAtleta(ini, fim){
   const { data:v } = await sb.from('grupo_atletas').select('grupo_id').eq('atleta_id', S.atleta.id);
@@ -345,7 +376,7 @@ async function vTreino(m){
   const { data:res } = ids.length ? await sb.from('resultados').select('*').in('bloco_id', ids).eq('atleta_id', S.atleta.id) : { data:[] };
   const rm = Object.fromEntries((res||[]).map(r => [r.bloco_id, r]));
   $('#dia').innerHTML = ts.map(t => `<div class="thead"><div class="mut small">${fmt(t.data)}</div><h2>${esc(t.titulo || fmt(t.data))}</h2><div class="mut small">${t.blocos.length} ${t.blocos.length===1?'atividade':'atividades'}</div></div>
-    ${t.mindset?`<div class="mind"><div class="mh">🧠 Mindset</div><div class="pre">${esc(t.mindset)}</div></div>`:''}
+    ${(t.mindset || mindsetAuto(t))?`<div class="mind"><div class="mh">🧠 Mindset</div><div class="pre">${esc(t.mindset || mindsetAuto(t))}</div></div>`:''}
     ${t.blocos.map((b,i) => { const r = rm[b.id]; return `<div class="ativ ${r?'feita':''}" id="at${b.id}"><div class="ah"><span class="num">${i+1}</span><h4>${esc(b.titulo)}</h4></div>
       <div class="pre ad">${esc(b.descricao)}</div>
       ${b.comentario?`<div class="pre mut small ac">${esc(b.comentario)}</div>`:''}
@@ -513,7 +544,7 @@ function editor(t, m){
     md.innerHTML = `<div class="box"><div class="row"><h2 style="margin:0">${t.id?'Editar':'Novo'} treino</h2><div class="sp"></div><button class="btn sec sm" id="x">Fechar</button></div>
     <p class="mut small">${esc(alvoNome||'')}</p>
     <div class="row"><div style="flex:1"><label>Data</label><input type="date" id="dt" value="${t.data}"></div><div style="flex:2"><label>Título</label><input id="tt" value="${esc(t.titulo)}" placeholder="Ex.: SEGUNDA – Força + Snatch"></div></div>
-    <label>🧠 Mindset (aparece no topo do treino)</label><textarea id="mind" style="min-height:70px" placeholder="Ex.: Hoje o foco é qualidade de movimento. Carga é consequência.">${esc(t.mindset||'')}</textarea>
+    <label>🧠 Mindset (aparece no topo do treino)</label><textarea id="mind" style="min-height:70px" placeholder="Deixe vazio para usar a frase automática do dia: ${esc(mindsetAuto(t).replace(/\n/g,' '))}">${esc(t.mindset||'')}</textarea>
     ${t.atleta_id?`<label style="text-transform:none;letter-spacing:0;font-size:14px;color:var(--txt);margin-top:12px"><input type="checkbox" id="sub" style="width:auto;margin-right:8px" ${t.substitui_grupo?'checked':''}>Substituir o treino do grupo neste dia (o atleta só vê este)</label>`:''}
     <div id="bls">${t.blocos.map((b,i)=>`<div class="blk"><div class="row"><span class="mut small">Bloco ${i+1}</span><div class="sp"></div>
       <button class="btn sec sm" data-up="${i}" ${i?'':'disabled'}>↑</button><button class="btn sec sm" data-dn="${i}" ${i<t.blocos.length-1?'':'disabled'}>↓</button><button class="btn dan sm" data-rm="${i}">Remover</button></div>

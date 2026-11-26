@@ -360,6 +360,7 @@ async function vHist(m){
 const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ min:10, trab:40, desc:20, rounds:8, emom:60, emomR:10 } };
 let wake = null;
 async function pedeWake(){ try { wake = await navigator.wakeLock?.request('screen'); } catch{} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && CR.rod && (!wake || wake.released)) pedeWake(); });
 function bip(f=880, d=.15){ try { const c = bip.c ||= new (window.AudioContext||window.webkitAudioContext)(); const o=c.createOscillator(), g=c.createGain(); o.frequency.value=f; o.connect(g); g.connect(c.destination); g.gain.setValueAtTime(.3,c.currentTime); o.start(); o.stop(c.currentTime+d); } catch{} }
 const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; };
 function vCrono(m){

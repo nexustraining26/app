@@ -96,6 +96,10 @@ nav.tabs svg{width:22px;height:22px}
 #crono.ativo .timer{font-size:clamp(64px,25vw,240px);line-height:1;margin:28px 0 36px}
 #crono.ativo #fase{font-size:18px;font-weight:800;color:var(--acc);margin-top:0}
 #crono.ativo .btn{padding:14px 22px;font-size:17px}
+.pseg{display:flex;gap:6px}
+.pseg button{flex:1;padding:8px 4px;border-radius:10px;background:var(--card2);border:1px solid var(--line);color:var(--mut);font-weight:600;font-size:14px}
+.pseg button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.timer.prep{color:var(--mut)}
 .seg{display:flex;background:var(--card2);border-radius:10px;padding:3px;margin-bottom:10px}
 .seg button{flex:1;padding:8px;border-radius:8px;color:var(--mut)}
 .seg button.on{background:var(--acc);color:#fff;font-weight:600}
@@ -367,7 +371,7 @@ async function vHist(m){
 }
 
 // ---------- CRONÔMETRO ----------
-const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ timer:600, trab:40, desc:20, rounds:8, emom:60, emomR:10 } };
+const CR = { modo:'cron', rod:false, ini:0, acum:0, iv:null, cfg:{ timer:600, trab:40, desc:20, rounds:8, emom:60, emomR:10, prep:10 } };
 const campoTempo = (k, rot) => `<div class="tcampo"><label>${rot}</label><div class="mmss"><input type="number" inputmode="numeric" min="0" id="m_${k}" value="${Math.floor(CR.cfg[k]/60)}"><span>min</span><input type="number" inputmode="numeric" min="0" max="59" id="s_${k}" value="${CR.cfg[k]%60}"><span>s</span></div></div>`;
 const campoNum = (k, rot) => `<div class="tcampo"><label>${rot}</label><input type="number" inputmode="numeric" min="1" id="n_${k}" value="${CR.cfg[k]}"></div>`;
 let wake = null;
@@ -381,7 +385,8 @@ function vCrono(m){
   <div class="card" id="crono">
     <div id="cfg">${CR.modo==='timer'?campoTempo('timer','Tempo'):''}
     ${CR.modo==='tabata'?campoTempo('trab','Trabalho')+campoTempo('desc','Descanso')+campoNum('rounds','Rounds'):''}
-    ${CR.modo==='emom'?campoTempo('emom','A cada')+campoNum('emomR','Rounds'):''}</div>
+    ${CR.modo==='emom'?campoTempo('emom','A cada')+campoNum('emomR','Rounds'):''}
+    <div class="tcampo" style="flex-basis:100%"><label>Contagem antes de começar</label><div class="pseg">${[[0,'Sem'],[5,'5 s'],[10,'10 s'],[15,'15 s']].map(([v,n])=>`<button data-p="${v}" class="${c.prep===v?'on':''}">${n}</button>`).join('')}</div></div></div>
     <div class="mut small" id="fase" style="text-align:center;margin-top:10px">&nbsp;</div>
     <div class="timer" id="tm">00:00</div>
     <div class="row" style="justify-content:center"><button class="btn" id="play" style="min-width:120px">${CR.rod?'Pausar':'Iniciar'}</button><button class="btn sec" id="zerar">Zerar</button></div>
@@ -394,7 +399,8 @@ function vCrono(m){
     if (!CR.rod && !CR.acum) tick();
   });
   m.querySelectorAll('#cfg input[id^="s_"]').forEach(i => i.onchange = () => { const k = i.id.slice(2); $('#m_'+k).value = Math.floor(c[k]/60); i.value = c[k]%60; });
-  $('#play').onclick = () => { if (CR.rod) { CR.acum += (Date.now()-CR.ini)/1000; parar(); } else { CR.rod=true; CR.ini=Date.now(); pedeWake(); CR.iv=setInterval(tick,200); bip(660); } $('#play').textContent = CR.rod?'Pausar':'Iniciar'; };
+  m.querySelectorAll('.pseg button').forEach(b => b.onclick = () => { c.prep = +b.dataset.p; m.querySelectorAll('.pseg button').forEach(x => x.classList.toggle('on', x === b)); });
+  $('#play').onclick = () => { if (CR.rod) { CR.acum += (Date.now()-CR.ini)/1000; parar(); } else { if (CR.acum === 0 && c.prep > 0) { CR.acum = -c.prep; CR.ultPrep = null; } CR.rod=true; CR.ini=Date.now(); pedeWake(); CR.iv=setInterval(tick,200); bip(660); } $('#play').textContent = CR.rod?'Pausar':'Iniciar'; };
   $('#zerar').onclick = () => { parar(); CR.acum=0; CR.ult=null; tick(); $('#play').textContent='Iniciar'; };
   tick();
 }
@@ -402,12 +408,15 @@ function parar(){ CR.rod=false; clearInterval(CR.iv); try{ wake?.release(); }cat
 function tick(){
   const el = $('#tm'); if (!el) return;
   const t = CR.acum + (CR.rod ? (Date.now()-CR.ini)/1000 : 0), c = CR.cfg; let txt, fase = '';
-  if (CR.modo==='cron') txt = mmss(Math.floor(t));
+  const prep = t < 0;
+  if (CR.ultPrep != null && !prep) { if (CR.rod) bip(990,.45); CR.ultPrep = null; }
+  if (prep) { const s = Math.ceil(-t); txt = String(s); fase = 'Prepare-se'; if (CR.ultPrep !== s) { if (CR.rod && s <= 3) bip(660); CR.ultPrep = s; } }
+  else if (CR.modo==='cron') txt = mmss(Math.floor(t));
   else if (CR.modo==='timer') { const r = c.timer - t; txt = mmss(r); if (r<=0 && CR.rod){ CR.acum=t; parar(); bip(440,.6); } if (r<=0 && CR.acum) fase='Fim!'; }
   else if (CR.modo==='tabata') { const ciclo=c.trab+c.desc, n=Math.floor(t/ciclo); if (n>=c.rounds){ txt='00:00'; fase='Fim!'; if(CR.rod){CR.acum=t;parar();bip(440,.6);} } else { const p=t%ciclo, tr=p<c.trab; txt=mmss(tr?c.trab-p:ciclo-p); fase=`Round ${n+1}/${c.rounds} · ${tr?'TRABALHO':'descanso'}`; const k=n+'-'+tr; if(CR.ult!==k){ if(CR.rod&&CR.ult) bip(tr?880:520); CR.ult=k; } } }
   else { const n=Math.floor(t/c.emom); if (n>=c.emomR){ txt='00:00'; fase='Fim!'; if(CR.rod){CR.acum=t;parar();bip(440,.6);} } else { txt=mmss(c.emom - t%c.emom); fase=`Minuto ${n+1}/${c.emomR}`; if(CR.ult!==n){ if(CR.rod&&CR.ult!=null) bip(880); CR.ult=n; } } }
-  el.textContent = txt; el.classList.toggle('go', CR.rod); const f=$('#fase'); if (f) f.innerHTML = fase || '&nbsp;';
-  const cx = $('#crono'); if (cx) cx.classList.toggle('ativo', CR.rod || CR.acum > 0); const sg = $('#main .seg'); if (sg) sg.classList.toggle('hide', CR.rod || CR.acum > 0);
+  el.textContent = txt; el.classList.toggle('go', CR.rod && !prep); el.classList.toggle('prep', prep); const f=$('#fase'); if (f) f.innerHTML = fase || '&nbsp;';
+  const cx = $('#crono'); if (cx) cx.classList.toggle('ativo', CR.rod || CR.acum !== 0); const sg = $('#main .seg'); if (sg) sg.classList.toggle('hide', CR.rod || CR.acum !== 0);
   const pl=$('#play'); if (pl && !CR.rod) pl.textContent='Iniciar';
 }
 

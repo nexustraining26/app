@@ -52,6 +52,20 @@ nav.tabs svg{width:22px;height:22px}
 .day .n{font-size:18px;font-weight:700}
 .day.on{border-color:var(--acc);background:#160F2A}
 .day.has .n::after{content:"";display:block;width:5px;height:5px;border-radius:50%;background:var(--acc);margin:3px auto 0}
+.tcard{display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;color:var(--txt)}
+.tcard:active{background:var(--card2)}
+.dbadge{flex:none;width:58px;height:62px;border-radius:12px;background:linear-gradient(160deg,var(--acc),#4C1D95);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(123,47,247,.25)}
+.dbadge.hj{box-shadow:0 0 0 2px var(--acc2),0 4px 14px rgba(123,47,247,.35)}
+.dbadge.pass{background:var(--card2);box-shadow:none;border:1px solid var(--line)}
+.dbadge b{font-size:24px;line-height:1}
+.dbadge span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-top:3px;opacity:.9}
+.tcard .tt2{font-weight:700;font-size:16px;line-height:1.3;margin-bottom:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:5px 10px;border-radius:999px;background:var(--card2);border:1px solid var(--line);color:var(--mut)}
+.chip.mais{color:var(--acc2);border-color:var(--acc)}
+.chip.ok{color:var(--ok);border-color:rgba(46,224,106,.4)}
+.cnt{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:rgba(255,255,255,.2);font-size:12px;line-height:20px}
+.seg button:not(.on) .cnt{background:var(--acc);color:#fff}
 .bloco{border-left:3px solid var(--acc);padding:4px 0 4px 12px;margin:14px 0}
 .bloco h4{font-size:15px;margin-bottom:4px;color:var(--acc2)}
 .res{margin-top:8px;background:var(--card2);border-radius:10px;padding:10px}
@@ -207,8 +221,8 @@ function render(){
   <main class="wrap ${S.tab==='cal'?'wide':''}" id="main"></main>
   <nav class="tabs">${tabs.map(([k,n])=>`<button data-t="${k}" class="${S.tab===k?'on':''}">${ICON[k==='grupos'?'grupos':k]}<span>${n}</span></button>`).join('')}</nav>`;
   $('#sair').onclick = () => { if (confirm('Sair da conta?')) sb.auth.signOut(); };
-  const sp = $('#sairprev'); if (sp) sp.onclick = () => { S.preview = false; S.atleta = null; S.tab = 'grupos'; render(); };
-  app.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { S.tab = b.dataset.t; render(); });
+  const sp = $('#sairprev'); if (sp) sp.onclick = () => { S.preview = false; S.atleta = null; S.treinoAberto = null; S.tab = 'grupos'; render(); };
+  app.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => { S.tab = b.dataset.t; S.treinoAberto = null; render(); });
   const m = $('#main');
   ({ hoje:vHoje, hist:vHist, crono:vCrono, cal:vCal, grupos:vGrupos })[S.tab](m);
 }
@@ -232,20 +246,47 @@ async function treinosDoAtleta(ini, fim){
 
 async function vHoje(m){
   if (!S.atleta) { m.innerHTML = `<div class="card"><h3>Conta ainda não liberada</h3><p class="mut">Seu e-mail (${esc(S.user.email)}) ainda não está cadastrado pelo seu coach. Avise o Nicolas para liberar seu acesso.</p></div>`; return; }
-  const ini = S.semana, fim = addDias(ini, 6);
-  m.innerHTML = `<div class="row" style="margin-bottom:10px"><button class="btn sec sm" id="ant">‹</button><div class="sp" style="text-align:center" class="mut">${fmt(ini)} – ${fmt(fim)}</div><button class="btn sec sm" id="prx">›</button></div><div class="week" id="wk"></div><div id="dia"><p class="mut">Carregando…</p></div>`;
-  $('#ant').onclick = () => { S.semana = addDias(S.semana,-7); S.dia = S.semana; vHoje(m); };
-  $('#prx').onclick = () => { S.semana = addDias(S.semana,7); S.dia = S.semana; vHoje(m); };
-  let porDia;
-  try { porDia = await treinosDoAtleta(ini, fim); } catch(e){ return erro(e); }
-  $('#wk').innerHTML = [...Array(7)].map((_,i)=>{ const d=addDias(ini,i); const dt=new Date(d+'T12:00:00'); return `<button class="day ${d===S.dia?'on':''} ${porDia[d]?'has':''}" data-d="${d}"><div class="d">${DIAS[dt.getDay()]}</div><div class="n">${dt.getDate()}</div></button>`; }).join('');
-  $('#wk').querySelectorAll('.day').forEach(b => b.onclick = () => { S.dia = b.dataset.d; vHoje(m); });
-  const ts = porDia[S.dia] || [];
-  if (!ts.length) { $('#dia').innerHTML = `<div class="card"><p class="mut">Sem treino em ${fmt(S.dia)}. Descanso! 💤</p></div>`; return; }
+  if (S.treinoAberto) return vTreino(m);
+  S.lista = S.lista || 'prox';
+  const hj = hoje();
+  m.innerHTML = `<div class="seg"><button data-l="prox" class="${S.lista==='prox'?'on':''}">Próximos<span class="cnt" id="nprox" hidden></span></button><button data-l="pass" class="${S.lista==='pass'?'on':''}">Passado</button></div><div id="lst"><p class="mut">Carregando…</p></div>`;
+  m.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { S.lista = b.dataset.l; vHoje(m); });
+  let prox, pass, res;
+  try {
+    const [a, b] = await Promise.all([ treinosDoAtleta(hj, addDias(hj, 60)), treinosDoAtleta(addDias(hj, -90), addDias(hj, -1)) ]);
+    prox = Object.values(a).flat().sort((x,y) => x.data.localeCompare(y.data) || x.id - y.id);
+    pass = Object.values(b).flat().sort((x,y) => y.data.localeCompare(x.data) || x.id - y.id);
+    const ids = [...prox, ...pass].flatMap(t => t.blocos.map(bl => bl.id));
+    res = ids.length ? (await sb.from('resultados').select('bloco_id').in('bloco_id', ids).eq('atleta_id', S.atleta.id)).data || [] : [];
+  } catch(e){ return erro(e); }
+  const feitos = new Set(res.map(r => r.bloco_id));
+  const nb = $('#nprox'); if (nb) { nb.textContent = prox.length; nb.hidden = !prox.length; }
+  const lista = S.lista === 'prox' ? prox : pass;
+  if (!lista.length) { $('#lst').innerHTML = `<div class="card"><p class="mut">${S.lista==='prox' ? 'Nenhum treino programado ainda. Descanso! 💤' : 'Nenhum treino nos últimos 90 dias.'}</p></div>`; return; }
+  const MES = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  $('#lst').innerHTML = lista.map(t => {
+    const dt = new Date(t.data + 'T12:00:00');
+    const tit = t.blocos.map(b => b.titulo).filter(Boolean);
+    const vis = tit.slice(0, 4), resto = tit.length - vis.length;
+    const nFeitos = t.blocos.filter(b => feitos.has(b.id)).length;
+    return `<button class="tcard" data-ab="${t.id}"><div class="dbadge ${t.data===hj?'hj':''} ${S.lista==='pass'?'pass':''}"><b>${dt.getDate()}</b><span>${MES[dt.getMonth()]}</span></div>
+      <div style="flex:1;min-width:0"><div class="tt2">${esc(t.titulo || 'Treino')}</div><div class="chips">${vis.map(x => `<span class="chip">${esc(x)}</span>`).join('')}${resto > 0 ? `<span class="chip mais">+${resto}</span>` : ''}${nFeitos ? `<span class="chip ok">✓ ${nFeitos}/${t.blocos.length}</span>` : ''}</div></div></button>`;
+  }).join('');
+  $('#lst').querySelectorAll('[data-ab]').forEach(b => b.onclick = () => { S.treinoAberto = +b.dataset.ab; vHoje(m); window.scrollTo(0,0); });
+}
+
+async function vTreino(m){
+  m.innerHTML = `<button class="btn sec sm" id="volta" style="margin-bottom:12px">‹ Voltar</button><div id="dia"><p class="mut">Carregando…</p></div>`;
+  $('#volta').onclick = () => { S.treinoAberto = null; vHoje(m); };
+  const { data:t0, error:e0 } = await sb.from('treinos').select('*, blocos(*)').eq('id', S.treinoAberto).maybeSingle();
+  if (e0) return erro(e0);
+  if (!t0) { S.treinoAberto = null; return vHoje(m); }
+  t0.blocos.sort((a,b) => a.ordem - b.ordem);
+  const ts = [t0];
   const ids = ts.flatMap(t => t.blocos.map(b => b.id));
   const { data:res } = ids.length ? await sb.from('resultados').select('*').in('bloco_id', ids).eq('atleta_id', S.atleta.id) : { data:[] };
   const rm = Object.fromEntries((res||[]).map(r => [r.bloco_id, r]));
-  $('#dia').innerHTML = ts.map(t => `<div class="card"><h2 style="margin-top:0">${esc(t.titulo || fmt(t.data))}</h2>
+  $('#dia').innerHTML = ts.map(t => `<div class="card"><div class="mut small" style="margin-bottom:4px">${fmt(t.data)}</div><h2 style="margin-top:0">${esc(t.titulo || fmt(t.data))}</h2>
     ${t.blocos.map(b => { const r = rm[b.id]; return `<div class="bloco"><h4>${esc(b.titulo)}</h4><div class="pre">${esc(b.descricao)}</div>
       ${b.comentario?`<div class="pre mut small" style="margin-top:6px">${esc(b.comentario)}</div>`:''}
       ${b.video_url?`<a class="small" style="color:var(--acc2)" href="${esc(b.video_url)}" target="_blank" rel="noopener">▶ Ver vídeo</a>`:''}

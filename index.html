@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nexus">
+<meta name="versao" content="2026-11-26a">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Nexus</title>
@@ -424,6 +425,22 @@ function tick(){
   const cx = $('#crono'); if (cx) cx.classList.toggle('ativo', CR.rod || CR.acum !== 0); const sg = $('#main .seg'); if (sg) sg.classList.toggle('hide', CR.rod || CR.acum !== 0);
   const pl=$('#play'); if (pl && !CR.rod) pl.textContent='Iniciar';
 }
+
+// ---------- ATUALIZAÇÃO AUTOMÁTICA ----------
+const VERSAO = document.querySelector('meta[name=versao]')?.content || '';
+async function checaVersao(){
+  try {
+    if (CR.rod || document.querySelector('.modal') || ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) return;
+    const h = await (await fetch('index.html?x=' + Date.now(), { cache:'no-store' })).text();
+    const nova = (h.match(/<meta name="versao" content="([^"]+)"/) || [])[1];
+    if (!nova || nova === VERSAO) return;
+    if (sessionStorage.getItem('tentouVersao') === nova) return;
+    sessionStorage.setItem('tentouVersao', nova);
+    location.replace(location.pathname + '?v=' + encodeURIComponent(nova));
+  } catch {}
+}
+checaVersao();
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checaVersao(); });
 
 // ---------- COACH: CALENDÁRIO ----------
 let CACHE = { grupos:[], atletas:[], vinc:[] };

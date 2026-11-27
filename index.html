@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nexus">
-<meta name="versao" content="2026-11-27a">
+<meta name="versao" content="2026-11-27b">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Nexus</title>
@@ -148,7 +148,10 @@ header.top .brand .logo{font-size:18px}
 .rmlist{margin-top:8px}
 .rmrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .rmrow span{flex:1}
-.rmrow input{width:110px;text-align:center;font-weight:700}
+.rmrow input{width:76px;text-align:center;font-weight:700;padding:8px 4px}
+.rmsec{margin:16px 0 2px;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+.rmins{display:flex;gap:6px}
+.mini{display:flex;flex-direction:column;align-items:center;margin:0;font-size:10px;letter-spacing:.04em;gap:2px}
 .mind .mh{font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#FFFFFF;margin-bottom:8px}
 .mind .pre{font-family:"Lora",Georgia,"Times New Roman",serif;font-style:italic;font-weight:400;font-size:17px;line-height:1.6;color:#FFFFFF}
 .thead h2{margin:2px 0 4px;line-height:1.3}
@@ -293,35 +296,71 @@ function render(){
 
 // ---------- RMs E CARGAS ----------
 const TESTES = [
-  ['back_squat','Back Squat',[1,5]], ['front_squat','Front Squat',[1]], ['deadlift','Deadlift',[1,5]],
-  ['snatch','Snatch',[1]], ['cj','Clean & Jerk',[1]], ['bench','Bench Press',[1,5]],
-  ['shoulder_press','Shoulder Press',[1,5]], ['push_press','Push Press',[1]]
+  ['LPO', 'kg', [['snatch','Snatch',[1]], ['power_snatch','Power Snatch',[1]], ['clean','Clean',[1]], ['power_clean','Power Clean',[1]], ['cj','Clean & Jerk',[1]], ['jerk','Jerk (Push/Split)',[1]], ['snatch_balance','Snatch Balance',[1]], ['ohs','Overhead Squat',[1]]]],
+  ['Força', 'kg', [['back_squat','Back Squat',[1,3,5]], ['front_squat','Front Squat',[1,3,5]], ['deadlift','Deadlift',[1,3,5]], ['bench','Bench Press',[1,3,5]], ['shoulder_press','Shoulder Press',[1,3,5]], ['push_press','Push Press',[1,3]], ['thruster','Thruster',[1]]]],
+  ['Ginástica · máximo de reps', 'reps', [['pullup_strict','Strict Pull-up'], ['pullup','Pull-up (kipping)'], ['c2b','Chest-to-Bar'], ['t2b','Toes-to-Bar'], ['bmu','Bar Muscle-up'], ['rmu','Ring Muscle-up'], ['hspu_strict','Strict HSPU'], ['hspu_deficit','Déficit Strict HSPU'], ['hspu','HSPU (kipping)'], ['ring_dip','Ring Dip'], ['pushup','Push-up'], ['du','Double Under']]],
+  ['Carga extra', 'kg+', [['pullup_peso','Weighted Strict Pull-up'], ['dip_peso','Weighted Dip']]],
+  ['Engine', 'W', [['ftp','FTP Bike']]]
 ];
-// Ordem importa: variações mais específicas primeiro.
-const LIFTS = [
-  [/snatch (balance|deadlift|pull|high pull)|overhead squat|\bohs\b|snatch/g, 'snatch'],
-  [/front squat/g, 'front_squat'],
-  [/back squat|agachamento/g, 'back_squat'],
-  [/push press/g, 'push_press'],
-  [/clean ?(&|and|e) ?jerk|\bc ?& ?j\b|\bcj\b|clean pull|clean|jerk/g, 'cj'],
-  [/deadlift|levantamento terra/g, 'deadlift'],
-  [/bench( press)?|supino/g, 'bench'],
-  [/shoulder press|strict press|desenvolvimento/g, 'shoulder_press'],
-  [/hspu|handstand|pull-? ?ups?|chin|t2b|toes|bmu|rmu|c2b|chest-to-bar|muscle-up|ftp|\bfc\b|\bkm\b|\bmax|vdot|pace|bike|\brow\b|remo|burpee|\bdb\b|dual|dumbbell|\bkb\b|kettlebell|weighted|ring|\bdips?\b|wall ball|\bcal\b|frequencia|\bwatts?\b/g, null]
+const TIPO = {}; TESTES.forEach(([, tipo, itens]) => itens.forEach(([k]) => TIPO[k] = tipo));
+// Variação sem teste próprio usa o teste principal.
+const FALLBACK = { power_snatch:'snatch', snatch_balance:'snatch', ohs:'snatch', power_clean:'clean', clean:'cj', jerk:'cj' };
+const KW = [
+  ['snatch_balance', /snatch balance/g],
+  ['ohs', /overhead squat|\bohs\b/g],
+  ['power_snatch', /(hang |high hang |low hang )?power snatch/g],
+  ['snatch', /(hang |high hang |low hang |muscle |squat )?snatch( deadlift| high pull| pull)?/g],
+  ['cj', /clean ?(&|and|e) ?jerk|\bc ?& ?j\b|\bcj\b/g],
+  ['power_clean', /(hang |high hang |low hang )?power clean/g],
+  ['clean', /(hang |high hang |low hang |muscle |squat )?clean( deadlift| high pull| pull)?/g],
+  ['jerk', /(push |split |power )?jerk/g],
+  ['push_press', /push press/g],
+  ['thruster', /thrusters?/g],
+  ['front_squat', /front squat/g],
+  ['back_squat', /back squat|agachamento/g],
+  ['deadlift', /deadlift|levantamento terra/g],
+  ['bench', /bench( press)?|supino/g],
+  ['shoulder_press', /shoulder press|strict press|desenvolvimento/g],
+  ['hspu_deficit', /deficit (strict )?(hspu|handstand push-? ?ups?)/g],
+  ['hspu_strict', /strict (hspu|handstand push-? ?ups?)/g],
+  ['hspu', /hspu|handstand push-? ?ups?/g],
+  ['pullup_peso', /weighted (strict )?pull-? ?ups?/g],
+  ['pullup_strict', /strict pull-? ?ups?/g],
+  ['c2b', /\bc2b\b|chest[- ]to[- ]bar( pull-? ?ups?)?/g],
+  ['pullup', /pull-? ?ups?/g],
+  ['t2b', /\bt2b\b|toes[- ]to[- ]bar/g],
+  ['bmu', /\bbmu\b|bar muscle-? ?ups?/g],
+  ['rmu', /\brmu\b|ring muscle-? ?ups?/g],
+  ['dip_peso', /weighted (ring )?dips?/g],
+  ['ring_dip', /(strict )?ring dips?|\bdips?\b/g],
+  ['pushup', /push-? ?ups?/g],
+  ['du', /double[- ]unders?|\bdus?\b/g],
+  ['ftp', /\bftp\b/g],
+  [null, /handstand walk|\bfc\b|\bkm\b|vdot|pace|\brow\b|remo|burpee|\bdb\b|dual|dumbbell|\bkb\b|kettlebell|wall ?ball|\bcal\b|frequencia|\bbox\b/g]
 ];
+const BARRA = new Set(['snatch','power_snatch','clean','power_clean','cj','jerk','snatch_balance','ohs','back_squat','front_squat','deadlift','bench','shoulder_press','push_press','thruster']);
 const normTxt = s => (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-function liftEm(txt, ultimo){
-  // Retorna o levantamento (ou null = não é barra) mais perto do fim (ultimo=true) ou do começo do texto.
+function kwEm(txt, ultimo){
+  // ultimo=true: palavra-chave mais perto do fim; false: a primeira do texto.
   let best = null;
-  for (const [re, k] of LIFTS) { re.lastIndex = 0; let mm; while ((mm = re.exec(txt))) { const c = { k, ini: mm.index, fim: mm.index + mm[0].length }; if (!best || (ultimo ? (c.fim > best.fim || (c.fim === best.fim && c.ini < best.ini)) : (c.ini < best.ini))) best = c; if (mm[0].length === 0) re.lastIndex++; } }
-  if (best && best.k && ultimo && /(db|dual|kb|weighted)\s*$/.test(txt.slice(Math.max(0, best.ini - 9), best.ini))) best.k = null;
+  for (const [k, re] of KW) { re.lastIndex = 0; let mm; while ((mm = re.exec(txt))) { const c = { k, ini: mm.index, fim: mm.index + mm[0].length }; if (!best || (ultimo ? (c.fim > best.fim || (c.fim === best.fim && c.ini < best.ini)) : (c.ini < best.ini || (c.ini === best.ini && c.fim > best.fim)))) best = c; } }
+  if (best && best.k && BARRA.has(best.k) && ultimo && /(db|dual|kb)\s*$/.test(txt.slice(Math.max(0, best.ini - 6), best.ini))) best.k = null;
   return best;
 }
 const rmEm = txt => { const mm = normTxt(txt).match(/([135])\s*rm\b/); return mm ? +mm[1] : null; };
+function refEm(txt){
+  // "% do 1RM de Snatch", "% 1RM CJ": o levantamento de referência escrito pelo coach.
+  const mm = txt.match(/([135])\s*rm\s*(?:de |do |da )?([a-z& -]{2,24})/);
+  if (!mm) return null;
+  const k = kwEm(mm[2], false);
+  return k && k.k && BARRA.has(k.k) && k.ini === 0 ? { k: k.k, n: +mm[1] } : null;
+}
 function rmValor(R, lift, n){
-  const v1 = R[lift + '_1'], v5 = R[lift + '_5'];
-  if (n === 5) { if (v5) return { v: v5 }; if (v1) return { v: v1 / 1.1667, est: true }; }
-  else { if (v1) return { v: v1 }; if (v5) return { v: v5 * 1.1667, est: true }; }
+  const fator = x => 1 + x / 30; // Epley
+  for (let l = lift; l; l = FALLBACK[l]) {
+    if (R[l + '_' + n]) return { v: R[l + '_' + n], est: l !== lift };
+    for (const m of [1, 3, 5]) if (R[l + '_' + m]) return { v: R[l + '_' + m] * fator(m) / fator(n), est: true };
+  }
   return null;
 }
 const kgFmt = x => (Math.round(x * 2) / 2).toString().replace('.', ',');
@@ -330,37 +369,53 @@ function cargaDe(rm, pct, barra){
   let lado = Math.round(((bruto - barra) / 2) * 2) / 2; if (lado < 0) lado = 0;
   return { total: bruto < barra ? barra : barra + lado * 2, lado };
 }
+const faixa = (a, b, f) => b != null && f(b) !== f(a) ? `${f(a)}–${f(b)}` : f(a);
 function cargasHTML(texto, titulo, R){
-  if (!texto || !R || !Object.keys(R).some(k => k !== 'barra')) return esc(texto);
+  if (!texto || !R || !Object.keys(R).some(k => k !== 'barra' && k !== '_id')) return esc(texto);
   const barra = R.barra || 20;
-  const linhas = texto.split('\n'), nl = linhas.map(normTxt), bloco = normTxt((titulo || '') + '\n' + texto);
+  const linhas = texto.split('\n'), nl = linhas.map(normTxt), tnorm = normTxt(titulo), bloco = tnorm + '\n' + nl.join('\n');
   const PCT = /(\d{1,3}(?:[.,]\d+)?)(?:\s*[-–]\s*(\d{1,3}(?:[.,]\d+)?))?\s*%/g;
   return linhas.map((linha, li) => {
     let out = '', pos = 0, mm; PCT.lastIndex = 0;
     while ((mm = PCT.exec(linha))) {
       const fim = mm.index + mm[0].length;
-      const depois = nl[li].slice(fim).split(/[+,;]|\d+\s*%/)[0].slice(0, 30);
+      const depois = nl[li].slice(fim).split(/[+,;(]|\d+\s*%/)[0].slice(0, 32);
       const antes = nl[li].slice(0, mm.index);
-      let alvo = liftEm(depois, false);
-      if (!alvo) alvo = liftEm(antes, true);
-      if (!alvo) { for (let j = li - 1; j >= -1 && !alvo; j--) alvo = liftEm(j >= 0 ? nl[j] : normTxt(titulo), true); }
+      let alvo = kwEm(depois, false) || kwEm(antes, true);
+      if (!alvo && /\bmax/.test(depois + ' ' + antes)) alvo = { k: null };
+      for (let j = li - 1; !alvo && j >= -1; j--) alvo = kwEm(j >= 0 ? nl[j] : tnorm, true);
       let ins = '';
       if (alvo && alvo.k) {
-        let n = rmEm(depois) || rmEm(antes);
-        if (!n) { const lre = LIFTS.find(l => l[1] === alvo.k)[0]; for (const s of bloco.split(/\n|\.\s/)) { lre.lastIndex = 0; if (lre.test(s) && rmEm(s)) { n = rmEm(s); break; } } }
-        if (!n) { for (let j = li - 1; j >= 0 && !n; j--) n = rmEm(nl[j]); }
-        if (!n) n = rmEm(bloco) || 1;
-        const rv = rmValor(R, alvo.k, n === 5 ? 5 : 1);
-        if (rv) {
-          const a = cargaDe(rv.v, +mm[1].replace(',', '.'), barra);
-          const b = mm[2] ? cargaDe(rv.v, +mm[2].replace(',', '.'), barra) : null;
-          const tot = b && b.total !== a.total ? `${kgFmt(a.total)}–${kgFmt(b.total)}` : kgFmt(a.total);
-          const lado = b && b.lado !== a.lado ? `${kgFmt(a.lado)}–${kgFmt(b.lado)}` : kgFmt(a.lado);
-          const ladoTxt = (b ? b.lado : a.lado) === 0 ? 'só a barra' : `${lado} kg cada lado`;
-          ins = ` <span class="carga">(${rv.est ? '≈' : ''}${tot} kg · ${ladoTxt})</span>`;
+        const p1 = +mm[1].replace(',', '.'), p2 = mm[2] ? +mm[2].replace(',', '.') : null;
+        const lista = (linha.slice(0, mm.index).match(/((?:\d{1,3}\/)+)$/) || [])[1];
+        const ps = lista ? lista.split('/').filter(Boolean).map(Number).concat(p1) : null;
+        if (BARRA.has(alvo.k)) {
+          const fam = k => ({ power_snatch:'snatch', snatch_balance:'snatch', ohs:'snatch', power_clean:'cj', clean:'cj', jerk:'cj' }[k] || k);
+          const refOk = t => { const r = refEm(t); return r && fam(r.k) === fam(alvo.k) ? r : null; };
+          let ref = refOk(depois) || refOk(antes);
+          for (let j = li - 1; !ref && j >= -1; j--) ref = refOk(j >= 0 ? nl[j] : tnorm);
+          if (!ref) ref = refOk(bloco);
+          const lift = ref ? ref.k : alvo.k;
+          let n = ref ? ref.n : (rmEm(depois) || rmEm(antes));
+          if (!n) { const re = KW.find(x => x[0] === lift)[1]; for (const s of bloco.split(/\n|\.\s/)) { re.lastIndex = 0; if (re.test(s) && rmEm(s)) { n = rmEm(s); break; } } }
+          for (let j = li - 1; !n && j >= 0; j--) n = rmEm(nl[j]);
+          if (!n) n = rmEm(bloco) || 1;
+          const rv = rmValor(R, lift, n);
+          if (rv && ps) ins = `(${rv.est ? '≈' : ''}${ps.map(p => kgFmt(cargaDe(rv.v, p, barra).total)).join('/')} kg)`;
+          else if (rv) {
+            const a = cargaDe(rv.v, p1, barra), b = p2 != null ? cargaDe(rv.v, p2, barra) : null;
+            const lado = (b || a).lado === 0 ? 'só a barra' : `${faixa(a.lado, b && b.lado, kgFmt)} kg cada lado`;
+            ins = `(${rv.est ? '≈' : ''}${faixa(a.total, b && b.total, kgFmt)} kg · ${lado})`;
+          }
+        } else if (R[alvo.k]) {
+          const v = R[alvo.k], t = TIPO[alvo.k];
+          if (ps) ins = `(${ps.map(p => t === 'kg+' ? kgFmt(v * p / 100) : Math.max(1, Math.round(v * p / 100))).join('/')} ${t === 'reps' ? 'reps' : t === 'W' ? 'W' : 'kg'})`;
+          else if (t === 'reps') ins = `(${faixa(Math.max(1, Math.round(v * p1 / 100)), p2 != null ? Math.max(1, Math.round(v * p2 / 100)) : null, String)} reps)`;
+          else if (t === 'kg+') ins = `(${faixa(v * p1 / 100, p2 != null ? v * p2 / 100 : null, kgFmt)} kg)`;
+          else if (t === 'W') ins = `(${faixa(Math.round(v * p1 / 100), p2 != null ? Math.round(v * p2 / 100) : null, String)} W)`;
         }
       }
-      out += esc(linha.slice(pos, fim)) + ins; pos = fim;
+      out += esc(linha.slice(pos, fim)) + (ins ? ` <span class="carga">${ins}</span>` : ''); pos = fim;
     }
     return out + esc(linha.slice(pos));
   }).join('\n');
@@ -377,18 +432,20 @@ async function vRMs(m){
   m.innerHTML = '<p class="mut">Carregando…</p>';
   const R = await carregaRMs(true);
   const barra = R.barra || 20;
+  const UN = { kg:'kg', reps:'reps', 'kg+':'kg', W:'W' };
+  const campo = (key, rot, un) => `<label class="mini">${rot}<input type="number" inputmode="decimal" step="0.5" data-rm="${key}" value="${R[key] ?? ''}" placeholder="${un}"></label>`;
   m.innerHTML = `<h2>Meus RMs</h2>
   <div class="card"><h3>Calculadora de RM</h3><p class="mut small">Coloque o peso e quantas repetições você fez. O app estima o seu 1RM.</p>
     <div class="row"><div style="flex:1"><label>Peso (kg)</label><input type="number" inputmode="decimal" id="cp_peso"></div><div style="flex:1"><label>Reps</label><input type="number" inputmode="numeric" id="cp_reps"></div></div>
     <div id="cp_res" style="margin-top:10px"></div></div>
-  <div class="card"><h3>Meus testes</h3><p class="mut small">Preencha os seus melhores resultados. As cargas aparecem sozinhas no treino, ao lado das porcentagens.</p>
+  <div class="card"><h3>Meus testes</h3><p class="mut small">Preencha só o que você já testou. As cargas, reps e watts aparecem sozinhos no treino, ao lado das porcentagens.</p>
     <label>Barra</label><div class="pseg">${[20,15].map(v=>`<button data-bar="${v}" class="${barra===v?'on':''}">${v} kg</button>`).join('')}</div>
-    <div class="rmlist">${TESTES.map(([k,nome,ns]) => ns.map(n => `<div class="rmrow"><span>${esc(nome)} <b>${n}RM</b></span><input type="number" inputmode="decimal" step="0.5" data-rm="${k}_${n}" value="${R[k+'_'+n] ?? ''}" placeholder="kg"></div>`).join('')).join('')}</div>
+    ${TESTES.map(([sec, tipo, itens]) => `<div class="rmsec">${esc(sec)}</div><div class="rmlist">${itens.map(([k, nome, ns]) => `<div class="rmrow"><span>${esc(nome)}</span><div class="rmins">${ns ? ns.map(n => campo(k + '_' + n, n + 'RM', 'kg')).join('') : campo(k, tipo === 'reps' ? 'máx' : tipo === 'W' ? 'watts' : 'kg', UN[tipo])}</div></div>`).join('')}</div>`).join('')}
     <button class="btn" id="rm_salvar" style="width:100%;margin-top:14px">Salvar</button></div>`;
   let bar = barra;
   m.querySelectorAll('[data-bar]').forEach(b => b.onclick = () => { bar = +b.dataset.bar; m.querySelectorAll('[data-bar]').forEach(x => x.classList.toggle('on', x === b)); });
   const calc = () => {
-    const p = +$('#cp_peso').value.replace?.(',', '.') || +$('#cp_peso').value, r = Math.floor(+$('#cp_reps').value);
+    const p = +String($('#cp_peso').value).replace(',', '.'), r = Math.floor(+$('#cp_reps').value);
     const el = $('#cp_res'); if (!p || !r) { el.innerHTML = ''; return; }
     const um = r === 1 ? p : p * (1 + r / 30);
     el.innerHTML = `<div style="font-size:22px;font-weight:800">1RM estimado: ${kgFmt(um)} kg</div><div class="list" style="margin-top:6px">${[95,90,85,80,75,70,65,60].map(pc => { const c = cargaDe(um, pc, bar); return `<div class="it"><b style="width:46px">${pc}%</b><span style="flex:1">${kgFmt(c.total)} kg</span><span class="mut small">${c.lado ? kgFmt(c.lado) + ' kg cada lado' : 'só a barra'}</span></div>`; }).join('')}</div>`;
@@ -398,8 +455,9 @@ async function vRMs(m){
     if (S.preview) return toast('Modo visualização: o atleta salva os RMs aqui');
     e.target.disabled = true;
     try {
-      const up = [{ atleta_id:S.atleta.id, chave:'barra', valor:bar, atualizado_em:new Date().toISOString() }], del = [];
-      m.querySelectorAll('[data-rm]').forEach(i => { const v = +String(i.value).replace(',', '.'); if (v > 0) up.push({ atleta_id:S.atleta.id, chave:i.dataset.rm, valor:v, atualizado_em:new Date().toISOString() }); else del.push(i.dataset.rm); });
+      const agora = new Date().toISOString();
+      const up = [{ atleta_id:S.atleta.id, chave:'barra', valor:bar, atualizado_em:agora }], del = [];
+      m.querySelectorAll('[data-rm]').forEach(i => { const v = +String(i.value).replace(',', '.'); if (v > 0) up.push({ atleta_id:S.atleta.id, chave:i.dataset.rm, valor:v, atualizado_em:agora }); else del.push(i.dataset.rm); });
       const r1 = await sb.from('rms').upsert(up, { onConflict:'atleta_id,chave' }); if (r1.error) throw r1.error;
       if (del.length) { const r2 = await sb.from('rms').delete().eq('atleta_id', S.atleta.id).in('chave', del); if (r2.error) throw r2.error; }
       await carregaRMs(true); toast('RMs salvos');

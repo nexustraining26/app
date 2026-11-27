@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Nexus">
-<meta name="versao" content="2026-11-27c">
+<meta name="versao" content="2026-11-27d">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <title>Nexus</title>
@@ -365,15 +365,19 @@ function rmValor(R, lift, n){
   return null;
 }
 const kgFmt = x => (Math.round(x * 2) / 2).toString().replace('.', ',');
-function cargaDe(rm, pct, barra){
+const LB = 2.20462;
+const unidade = R => R && R.lb ? 'lb' : 'kg';
+const barraDe = R => unidade(R) === 'lb' ? ((R.barra || 20) === 15 ? 35 : 45) : (R.barra || 20);
+const paraU = (R, kg) => unidade(R) === 'lb' ? kg * LB : kg;
+function cargaDe(rm, pct, barra, passo = 0.5){
   const bruto = rm * pct / 100;
-  let lado = Math.round(((bruto - barra) / 2) * 2) / 2; if (lado < 0) lado = 0;
+  let lado = Math.round(((bruto - barra) / 2) / passo) * passo; if (lado < 0) lado = 0;
   return { total: bruto < barra ? barra : barra + lado * 2, lado };
 }
 const faixa = (a, b, f) => b != null && f(b) !== f(a) ? `${f(a)}–${f(b)}` : f(a);
 function cargasHTML(texto, titulo, R){
-  if (!texto || !R || !Object.keys(R).some(k => k !== 'barra' && k !== '_id')) return esc(texto);
-  const barra = R.barra || 20;
+  if (!texto || !R || !Object.keys(R).some(k => k !== 'barra' && k !== '_id' && k !== 'lb')) return esc(texto);
+  const barra = barraDe(R), u = unidade(R), passo = u === 'lb' ? 2.5 : 0.5;
   const linhas = texto.split('\n'), nl = linhas.map(normTxt), tnorm = normTxt(titulo), bloco = tnorm + '\n' + nl.join('\n');
   const PCT = /(\d{1,3}(?:[.,]\d+)?)(?:\s*[-–]\s*(\d{1,3}(?:[.,]\d+)?))?\s*%/g;
   return linhas.map((linha, li) => {
@@ -402,17 +406,18 @@ function cargasHTML(texto, titulo, R){
           for (let j = li - 1; !n && j >= 0; j--) n = rmEm(nl[j]);
           if (!n) n = rmEm(bloco) || 1;
           const rv = rmValor(R, lift, n);
-          if (rv && ps) ins = `(${rv.est ? '≈' : ''}${ps.map(p => kgFmt(cargaDe(rv.v, p, barra).total)).join('/')} kg)`;
+          const vv = rv ? paraU(R, rv.v) : 0;
+          if (rv && ps) ins = `(${rv.est ? '≈' : ''}${ps.map(p => kgFmt(cargaDe(vv, p, barra, passo).total)).join('/')} ${u})`;
           else if (rv) {
-            const a = cargaDe(rv.v, p1, barra), b = p2 != null ? cargaDe(rv.v, p2, barra) : null;
-            const lado = (b || a).lado === 0 ? 'só a barra' : `${faixa(a.lado, b && b.lado, kgFmt)} kg cada lado`;
-            ins = `(${rv.est ? '≈' : ''}${faixa(a.total, b && b.total, kgFmt)} kg · ${lado})`;
+            const a = cargaDe(vv, p1, barra, passo), b = p2 != null ? cargaDe(vv, p2, barra, passo) : null;
+            const lado = (b || a).lado === 0 ? 'só a barra' : `${faixa(a.lado, b && b.lado, kgFmt)} ${u} cada lado`;
+            ins = `(${rv.est ? '≈' : ''}${faixa(a.total, b && b.total, kgFmt)} ${u} · ${lado})`;
           }
         } else if (R[alvo.k]) {
-          const v = R[alvo.k], t = TIPO[alvo.k];
-          if (ps) ins = `(${ps.map(p => t === 'kg+' ? kgFmt(v * p / 100) : Math.max(1, Math.round(v * p / 100))).join('/')} ${t === 'reps' ? 'reps' : t === 'W' ? 'W' : 'kg'})`;
+          const t = TIPO[alvo.k], v = t === 'kg+' ? paraU(R, R[alvo.k]) : R[alvo.k];
+          if (ps) ins = `(${ps.map(p => t === 'kg+' ? kgFmt(v * p / 100) : Math.max(1, Math.round(v * p / 100))).join('/')} ${t === 'reps' ? 'reps' : t === 'W' ? 'W' : u})`;
           else if (t === 'reps') ins = `(${faixa(Math.max(1, Math.round(v * p1 / 100)), p2 != null ? Math.max(1, Math.round(v * p2 / 100)) : null, String)} reps)`;
-          else if (t === 'kg+') ins = `(${faixa(v * p1 / 100, p2 != null ? v * p2 / 100 : null, kgFmt)} kg)`;
+          else if (t === 'kg+') ins = `(${faixa(v * p1 / 100, p2 != null ? v * p2 / 100 : null, kgFmt)} ${u})`;
           else if (t === 'W') ins = `(${faixa(Math.round(v * p1 / 100), p2 != null ? Math.round(v * p2 / 100) : null, String)} W)`;
         }
       }
@@ -432,39 +437,50 @@ async function vRMs(m){
   if (!S.atleta) return vHoje(m);
   m.innerHTML = '<p class="mut">Carregando…</p>';
   const R = await carregaRMs(true);
-  const barra = R.barra || 20;
-  const UN = { kg:'kg', reps:'reps', 'kg+':'kg', W:'W' };
-  const campo = (key, rot, un) => `<label class="mini">${rot}<input type="number" inputmode="decimal" step="0.5" data-rm="${key}" value="${R[key] ?? ''}" placeholder="${un}"></label>`;
-  m.innerHTML = `<h2>Meus RMs</h2>
-  <div class="card"><h3>Calculadora de RM</h3><p class="mut small">Coloque o peso e quantas repetições você fez. O app estima o seu 1RM.</p>
-    <div class="row"><div style="flex:1"><label>Peso (kg)</label><input type="number" inputmode="decimal" id="cp_peso"></div><div style="flex:1"><label>Reps</label><input type="number" inputmode="numeric" id="cp_reps"></div></div>
-    <div id="cp_res" style="margin-top:10px"></div></div>
-  <div class="card"><h3>Meus testes</h3><p class="mut small">Preencha só o que você já testou. As cargas, reps e watts aparecem sozinhos no treino, ao lado das porcentagens.</p>
-    <label>Barra</label><div class="pseg">${[20,15].map(v=>`<button data-bar="${v}" class="${barra===v?'on':''}">${v} kg</button>`).join('')}</div>
-    ${TESTES.map(([sec, tipo, itens]) => `<div class="rmsec">${esc(sec)}</div><div class="rmlist">${itens.map(([k, nome, ns]) => `<div class="rmrow"><span>${esc(nome)}</span><div class="rmins">${ns ? ns.map(n => campo(k + '_' + n, n + 'RM', 'kg')).join('') : campo(k, tipo === 'reps' ? 'máx' : tipo === 'W' ? 'watts' : 'kg', UN[tipo])}</div></div>`).join('')}</div>`).join('')}
-    <button class="btn" id="rm_salvar" style="width:100%;margin-top:14px">Salvar</button></div>`;
-  let bar = barra;
-  m.querySelectorAll('[data-bar]').forEach(b => b.onclick = () => { bar = +b.dataset.bar; m.querySelectorAll('[data-bar]').forEach(x => x.classList.toggle('on', x === b)); });
-  const calc = () => {
-    const p = +String($('#cp_peso').value).replace(',', '.'), r = Math.floor(+$('#cp_reps').value);
-    const el = $('#cp_res'); if (!p || !r) { el.innerHTML = ''; return; }
-    const um = r === 1 ? p : p * (1 + r / 30);
-    el.innerHTML = `<div style="font-size:22px;font-weight:800">1RM estimado: ${kgFmt(um)} kg</div><div class="list" style="margin-top:6px">${[95,90,85,80,75,70,65,60].map(pc => { const c = cargaDe(um, pc, bar); return `<div class="it"><b style="width:46px">${pc}%</b><span style="flex:1">${kgFmt(c.total)} kg</span><span class="mut small">${c.lado ? kgFmt(c.lado) + ' kg cada lado' : 'só a barra'}</span></div>`; }).join('')}</div>`;
+  let u = unidade(R), bar = R.barra || 20;
+  // V guarda tudo em kg (pesos) ou no valor puro (reps, watts).
+  const V = {}; Object.keys(R).forEach(k => { if (!['_id', 'barra', 'lb'].includes(k)) V[k] = R[k]; });
+  const ehPeso = k => { const t = TIPO[k.replace(/_[135]$/, '')]; return t === 'kg' || t === 'kg+'; };
+  const mostra = k => V[k] == null ? '' : ehPeso(k) ? String(Math.round((u === 'lb' ? V[k] * LB : V[k]) * 2) / 2) : String(V[k]);
+  const barU = () => u === 'lb' ? (bar === 15 ? 35 : 45) : bar;
+  const campo = (key, rot, ph) => `<label class="mini">${rot}<input type="number" inputmode="decimal" step="0.5" data-rm="${key}" value="${mostra(key)}" placeholder="${ph}"></label>`;
+  const draw = () => {
+    m.innerHTML = `<h2>Meus RMs</h2>
+    <div class="card"><h3>Unidade</h3><div class="pseg">${[['kg','Quilos (kg)'],['lb','Libras (lb)']].map(([x, n]) => `<button data-uni="${x}" class="${u === x ? 'on' : ''}">${n}</button>`).join('')}</div>
+      <p class="mut small" style="margin-top:6px">Vale para os seus testes, a calculadora e as cargas que aparecem no treino.</p></div>
+    <div class="card"><h3>Calculadora de RM</h3><p class="mut small">Coloque o peso e quantas repetições você fez. O app estima o seu 1RM.</p>
+      <div class="row"><div style="flex:1"><label>Peso (${u})</label><input type="number" inputmode="decimal" id="cp_peso"></div><div style="flex:1"><label>Reps</label><input type="number" inputmode="numeric" id="cp_reps"></div></div>
+      <div id="cp_res" style="margin-top:10px"></div></div>
+    <div class="card"><h3>Meus testes</h3><p class="mut small">Preencha só o que você já testou. As cargas, reps e watts aparecem sozinhos no treino, ao lado das porcentagens.</p>
+      <label>Barra</label><div class="pseg">${[20, 15].map(v => `<button data-bar="${v}" class="${bar === v ? 'on' : ''}">${u === 'lb' ? (v === 15 ? 35 : 45) + ' lb' : v + ' kg'}</button>`).join('')}</div>
+      ${TESTES.map(([sec, tipo, itens]) => `<div class="rmsec">${esc(sec)}</div><div class="rmlist">${itens.map(([k, nome, ns]) => `<div class="rmrow"><span>${esc(nome)}</span><div class="rmins">${ns ? ns.map(n => campo(k + '_' + n, n + 'RM', u)).join('') : campo(k, tipo === 'reps' ? 'máx' : tipo === 'W' ? 'watts' : u, tipo === 'reps' ? 'reps' : tipo === 'W' ? 'W' : u)}</div></div>`).join('')}</div>`).join('')}
+      <button class="btn" id="rm_salvar" style="width:100%;margin-top:14px">Salvar</button></div>`;
+    m.querySelectorAll('[data-uni]').forEach(b => b.onclick = () => { if (u !== b.dataset.uni) { u = b.dataset.uni; draw(); } });
+    m.querySelectorAll('[data-bar]').forEach(b => b.onclick = () => { bar = +b.dataset.bar; m.querySelectorAll('[data-bar]').forEach(x => x.classList.toggle('on', x === b)); calc(); });
+    m.querySelectorAll('[data-rm]').forEach(i => i.oninput = () => { const k = i.dataset.rm, val = +String(i.value).replace(',', '.'); V[k] = val > 0 ? (ehPeso(k) && u === 'lb' ? val / LB : val) : null; });
+    const calc = () => {
+      const p = +String($('#cp_peso').value).replace(',', '.'), r = Math.floor(+$('#cp_reps').value);
+      const el = $('#cp_res'); if (!el) return; if (!p || !r) { el.innerHTML = ''; return; }
+      const um = r === 1 ? p : p * (1 + r / 30), passo = u === 'lb' ? 2.5 : 0.5;
+      el.innerHTML = `<div style="font-size:22px;font-weight:800">1RM estimado: ${kgFmt(um)} ${u}</div><div class="list" style="margin-top:6px">${[95,90,85,80,75,70,65,60].map(pc => { const c = cargaDe(um, pc, barU(), passo); return `<div class="it"><b style="width:46px">${pc}%</b><span style="flex:1">${kgFmt(c.total)} ${u}</span><span class="mut small">${c.lado ? kgFmt(c.lado) + ' ' + u + ' cada lado' : 'só a barra'}</span></div>`; }).join('')}</div>`;
+    };
+    $('#cp_peso').oninput = calc; $('#cp_reps').oninput = calc;
+    $('#rm_salvar').onclick = async (e) => {
+      if (S.preview) return toast('Modo visualização: o atleta salva os RMs aqui');
+      e.target.disabled = true;
+      try {
+        const agora = new Date().toISOString(), id = S.atleta.id;
+        const up = [{ atleta_id:id, chave:'barra', valor:bar, atualizado_em:agora }], del = [];
+        if (u === 'lb') up.push({ atleta_id:id, chave:'lb', valor:1, atualizado_em:agora }); else del.push('lb');
+        m.querySelectorAll('[data-rm]').forEach(i => { const k = i.dataset.rm; if (V[k] > 0) up.push({ atleta_id:id, chave:k, valor:V[k], atualizado_em:agora }); else del.push(k); });
+        const r1 = await sb.from('rms').upsert(up, { onConflict:'atleta_id,chave' }); if (r1.error) throw r1.error;
+        const r2 = await sb.from('rms').delete().eq('atleta_id', id).in('chave', del); if (r2.error) throw r2.error;
+        await carregaRMs(true); toast('RMs salvos');
+      } catch(err) { erro(err); }
+      e.target.disabled = false;
+    };
   };
-  $('#cp_peso').oninput = calc; $('#cp_reps').oninput = calc;
-  $('#rm_salvar').onclick = async (e) => {
-    if (S.preview) return toast('Modo visualização: o atleta salva os RMs aqui');
-    e.target.disabled = true;
-    try {
-      const agora = new Date().toISOString();
-      const up = [{ atleta_id:S.atleta.id, chave:'barra', valor:bar, atualizado_em:agora }], del = [];
-      m.querySelectorAll('[data-rm]').forEach(i => { const v = +String(i.value).replace(',', '.'); if (v > 0) up.push({ atleta_id:S.atleta.id, chave:i.dataset.rm, valor:v, atualizado_em:agora }); else del.push(i.dataset.rm); });
-      const r1 = await sb.from('rms').upsert(up, { onConflict:'atleta_id,chave' }); if (r1.error) throw r1.error;
-      if (del.length) { const r2 = await sb.from('rms').delete().eq('atleta_id', S.atleta.id).in('chave', del); if (r2.error) throw r2.error; }
-      await carregaRMs(true); toast('RMs salvos');
-    } catch(err) { erro(err); }
-    e.target.disabled = false;
-  };
+  draw();
 }
 
 // ---------- MINDSET AUTOMÁTICO ----------
